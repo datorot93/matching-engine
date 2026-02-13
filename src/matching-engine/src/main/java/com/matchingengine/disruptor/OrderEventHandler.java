@@ -1,6 +1,5 @@
 package com.matchingengine.disruptor;
 
-import com.google.gson.Gson;
 import com.lmax.disruptor.EventHandler;
 import com.matchingengine.config.ShardConfig;
 import com.matchingengine.domain.MatchResult;
@@ -49,7 +48,6 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
     private final EventPublisher publisher;
     private final MetricsRegistry metrics;
     private final ShardConfig config;
-    private final Gson gson;
     private final long ringBufferSize;
 
     public OrderEventHandler(OrderBookManager bookManager,
@@ -65,7 +63,6 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
         this.publisher = publisher;
         this.metrics = metrics;
         this.config = config;
-        this.gson = new Gson();
         this.ringBufferSize = ringBufferSize;
     }
 
@@ -143,20 +140,21 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
             double totalDuration = nanosToSeconds(System.nanoTime() - event.receivedNanos);
             metrics.matchDuration.labelValues(shardId).observe(totalDuration);
 
-            // 8. Increment counters
+            // 8. Increment match counter
+            // Note: ordersReceivedTotal is incremented in OrderHttpHandler (HTTP layer)
+            // to count all received orders, including those rejected at the ring buffer.
             metrics.matchesTotal.labelValues(shardId).inc(resultSet.getMatchCount());
-            metrics.ordersReceivedTotal.labelValues(shardId, event.side.name().toLowerCase())
-                    .inc();
 
             // 9. Update order book gauges (aggregate across all books)
             updateOrderBookGauges(shardId);
 
             // 10. Update ring buffer utilization
-            // Approximate: sequence / ringBufferSize gives a rough utilization.
-            // More accurate would require access to the Disruptor's remaining capacity,
-            // but this approximation is sufficient for monitoring.
-            // We cannot easily get remaining capacity here, so we set it based on
-            // the current sequence modulo buffer size.
+            // Approximate utilization: sequence modulo ringBufferSize gives the
+            // position within the current ring buffer lap. We compute a rough
+            // fill level as the fraction of the buffer that has been claimed but
+            // potentially not yet processed.
+            double utilization = ((double) (sequence % ringBufferSize)) / ringBufferSize;
+            metrics.ringbufferUtilization.labelValues(shardId).set(utilization);
 
         } catch (Exception e) {
             logger.error("Error processing event sequence {}: {}", sequence, e.getMessage(), e);

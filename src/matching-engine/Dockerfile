@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
-COPY build/libs/matching-engine-*.jar matching-engine.jar
+COPY build/libs/matching-engine.jar matching-engine.jar
 RUN mkdir -p /app/wal
 
 ENV SHARD_ID=a

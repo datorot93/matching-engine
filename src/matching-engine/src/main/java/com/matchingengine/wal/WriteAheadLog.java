@@ -25,6 +25,7 @@ public class WriteAheadLog {
     private static final Logger logger = LoggerFactory.getLogger(WriteAheadLog.class);
 
     private final MappedByteBuffer buffer;
+    private final RandomAccessFile raf;
     private final int capacity;
     private int position;
     private boolean full;
@@ -41,9 +42,9 @@ public class WriteAheadLog {
         Path filePath = dirPath.resolve("wal.dat");
         logger.info("Initializing WAL at {} with size {} MB", filePath, sizeMb);
 
-        RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw");
-        raf.setLength(capacity);
-        FileChannel channel = raf.getChannel();
+        this.raf = new RandomAccessFile(filePath.toFile(), "rw");
+        this.raf.setLength(capacity);
+        FileChannel channel = this.raf.getChannel();
         this.buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, capacity);
 
         // We keep the channel and RAF open for the lifetime of the process.
@@ -93,6 +94,11 @@ public class WriteAheadLog {
      */
     public void close() {
         flush();
+        try {
+            raf.close();
+        } catch (IOException e) {
+            logger.warn("Failed to close WAL RandomAccessFile: {}", e.getMessage());
+        }
         logger.info("WAL closed. Final position: {} bytes written", position);
         // MappedByteBuffer does not have an explicit unmap in standard Java.
         // The buffer will be unmapped when GC collects it.

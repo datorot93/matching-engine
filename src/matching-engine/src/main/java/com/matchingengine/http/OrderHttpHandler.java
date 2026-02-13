@@ -126,6 +126,11 @@ public class OrderHttpHandler implements HttpHandler {
                 ringBuffer.publish(sequence);
             }
 
+            // Record that we received an order (HTTP-side counter, complements the
+            // event-handler-side counter for orders that actually get processed)
+            metrics.ordersReceivedTotal.labelValues(config.getShardId(),
+                    side.name().toLowerCase()).inc();
+
             // Return 200 ACCEPTED immediately -- do NOT wait for matching
             JsonObject response = new JsonObject();
             response.addProperty("status", "ACCEPTED");

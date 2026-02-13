@@ -1,6 +1,5 @@
 package com.matchingengine.http;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -36,11 +35,9 @@ public class SeedHttpHandler implements HttpHandler {
     private static final Logger logger = LoggerFactory.getLogger(SeedHttpHandler.class);
 
     private final OrderBookManager bookManager;
-    private final Gson gson;
 
     public SeedHttpHandler(OrderBookManager bookManager) {
         this.bookManager = bookManager;
-        this.gson = new Gson();
     }
 
     @Override
