@@ -1,6 +1,6 @@
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
-COPY build/libs/edge-gateway-*.jar edge-gateway.jar
+COPY build/libs/edge-gateway*.jar edge-gateway.jar
 
 ENV HTTP_PORT=8080
 ENV METRICS_PORT=9091
