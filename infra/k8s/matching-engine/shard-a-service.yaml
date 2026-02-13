@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: me-shard-a
+  namespace: matching-engine
+spec:
+  selector:
+    app: matching-engine
+    shard: a
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  - port: 9091
+    name: metrics
+    targetPort: 9091

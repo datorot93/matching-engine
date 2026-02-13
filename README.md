@@ -10,12 +10,14 @@ A high-performance, single-threaded matching engine for a centralized order book
 4. [Key Design Decisions](#key-design-decisions)
 5. [Prerequisites](#prerequisites)
 6. [How to Build](#how-to-build)
-7. [How to Run](#how-to-run)
-8. [How to Test](#how-to-test)
-9. [API Reference](#api-reference)
-10. [Configuration](#configuration)
-11. [Prometheus Metrics](#prometheus-metrics)
-12. [Docker](#docker)
+7. [How to Run Locally (Java)](#how-to-run-locally-java)
+8. [How to Test Locally](#how-to-test-locally)
+9. [Deploy to Kubernetes (k3d)](#deploy-to-kubernetes-k3d)
+10. [Edge Gateway](#edge-gateway)
+11. [API Reference](#api-reference)
+12. [Configuration](#configuration)
+13. [Prometheus Metrics](#prometheus-metrics)
+14. [Docker](#docker)
 
 ---
 
@@ -181,7 +183,7 @@ The Docker image uses `eclipse-temurin:21-jre-alpine` and runs with these JVM fl
 
 ---
 
-## How to Run
+## How to Run Locally (Java)
 
 ### Run locally with Java
 
@@ -236,7 +238,7 @@ curl http://localhost:8080/health
 
 ---
 
-## How to Test
+## How to Test Locally
 
 ### 1. Health check
 
@@ -410,6 +412,317 @@ echo "   $LATENCY"
 echo ""
 echo "=== Test Complete ==="
 ```
+
+---
+
+## Deploy to Kubernetes (k3d)
+
+The project includes a complete local Kubernetes deployment using **k3d** (k3s-in-Docker). This deploys the Matching Engine, Edge Gateway, Redpanda (Kafka), Prometheus, and Grafana — everything needed to run the full experiment.
+
+### Deployment Topology
+
+**ASR 1 — Single Shard (Latency Validation):**
+
+```
+k6 ──► ME Shard A ──► Redpanda
+            │
+            └──► Prometheus ──► Grafana
+```
+
+**ASR 2 — Multi Shard (Scalability Validation):**
+
+```
+k6 ──► Edge Gateway ──► ME Shard A ─┐
+                   ├──► ME Shard B  ├──► Redpanda
+                   └──► ME Shard C ─┘
+                                        │
+                                        └──► Prometheus ──► Grafana
+```
+
+### Prerequisites
+
+All of these must be installed (use `infra/scripts/00-prerequisites.sh` to verify):
+
+| Tool | Purpose |
+|:---|:---|
+| Docker | Container runtime (must be running) |
+| k3d | Creates local Kubernetes cluster inside Docker |
+| kubectl | Kubernetes CLI |
+| Helm | Deploys Prometheus and Grafana via Helm charts |
+| k6 | Load testing (for running ASR tests) |
+
+### Resource Requirements
+
+| Scenario | CPU (request) | CPU (limit) | Memory (request) | Memory (limit) |
+|:---|:---|:---|:---|:---|
+| ASR 1 (single shard) | 2.5 cores | 5.0 cores | 1.9 GiB | 3.8 GiB |
+| ASR 2 (3 shards) | 5.0 cores | 10.0 cores | 3.2 GiB | 6.3 GiB |
+
+### Step-by-Step Deployment
+
+All scripts are in `infra/scripts/`. Run them from the repo root:
+
+#### Step 1: Verify prerequisites
+
+```bash
+bash infra/scripts/00-prerequisites.sh
+```
+
+Checks that Docker, k3d, kubectl, Helm, k6, and Java 21 are installed.
+
+#### Step 2: Create the k3d cluster
+
+```bash
+bash infra/scripts/01-create-cluster.sh
+```
+
+Creates a k3d cluster named `matching-engine-exp` with:
+- 1 server node + 3 agent nodes
+- Port mappings: 8080 (HTTP), 9090 (Prometheus), 3000 (Grafana)
+- Traefik disabled (not needed)
+- Namespaces: `matching-engine` and `monitoring`
+
+**Verify:** `kubectl get nodes` should show 4 nodes in Ready state.
+
+#### Step 3: Deploy observability stack
+
+```bash
+bash infra/scripts/02-deploy-observability.sh
+```
+
+Installs Prometheus and Grafana via Helm in the `monitoring` namespace.
+
+**Verify:** `kubectl get pods -n monitoring` — all pods should be Running.
+
+#### Step 4: Deploy Redpanda (message broker)
+
+```bash
+bash infra/scripts/03-deploy-redpanda.sh
+```
+
+Deploys a single-node Redpanda instance and creates the `orders` and `matches` Kafka topics (12 partitions each).
+
+**Verify:** `kubectl get pods -n matching-engine` — `redpanda-0` should be Running.
+
+#### Step 5: Build and import Docker images
+
+```bash
+bash infra/scripts/04-build-images.sh
+```
+
+Builds both Java applications (`matching-engine` and `edge-gateway`), creates Docker images, and imports them into the k3d cluster.
+
+**Verify:** `docker images | grep experiment-v1` should show both images.
+
+#### Step 6a: Deploy single shard (ASR 1)
+
+```bash
+bash infra/scripts/05-deploy-me-single.sh
+```
+
+Deploys only ME Shard A. Used for latency validation tests.
+
+**Verify:** `kubectl get pods -n matching-engine -l app=matching-engine`
+
+#### Step 6b: Deploy multi shard (ASR 2)
+
+```bash
+bash infra/scripts/06-deploy-me-multi.sh
+```
+
+Deploys all 3 ME shards + the Edge Gateway. Used for scalability tests.
+
+**Verify:** `kubectl get pods -n matching-engine` — should show 3 ME pods + 1 gateway pod + Redpanda.
+
+#### Step 7: Set up port-forwards
+
+```bash
+# For single shard (ASR 1):
+bash infra/scripts/07-port-forward.sh single
+
+# For multi shard (ASR 2):
+bash infra/scripts/07-port-forward.sh multi
+```
+
+This makes services accessible locally:
+
+| Service | URL | Mode |
+|:---|:---|:---|
+| ME Shard A | http://localhost:8080 | `single` |
+| Edge Gateway | http://localhost:8080 | `multi` |
+| Prometheus | http://localhost:9090 | both |
+| Grafana | http://localhost:3000 | both |
+
+#### Step 8: Verify the deployment
+
+```bash
+# Health check (ME or Gateway depending on mode)
+curl http://localhost:8080/health
+
+# Submit a test order
+curl -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -d '{"orderId":"k8s-test-1","symbol":"TEST-ASSET-A","side":"BUY","type":"LIMIT","price":15000,"quantity":100}'
+
+# Check Prometheus is scraping ME metrics
+curl -s http://localhost:9090/api/v1/targets | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for t in data['data']['activeTargets']:
+    if 'matching-engine' in t.get('labels', {}).get('job', ''):
+        print(f\"  {t['labels'].get('app','?')} shard={t['labels'].get('shard','?')} -> {t['health']}\")
+"
+
+# Open Grafana
+echo "Open http://localhost:3000 (admin/admin)"
+```
+
+### Teardown
+
+```bash
+bash infra/scripts/10-teardown.sh
+```
+
+Deletes the k3d cluster and kills all port-forwards. Clean removal.
+
+### Quick Reference: Full Deployment Sequence
+
+```bash
+# From repo root:
+bash infra/scripts/00-prerequisites.sh
+bash infra/scripts/01-create-cluster.sh
+bash infra/scripts/02-deploy-observability.sh
+bash infra/scripts/03-deploy-redpanda.sh
+bash infra/scripts/04-build-images.sh
+
+# --- ASR 1 (single shard) ---
+bash infra/scripts/05-deploy-me-single.sh
+bash infra/scripts/07-port-forward.sh single
+curl http://localhost:8080/health   # verify
+
+# --- ASR 2 (multi shard) ---
+bash infra/scripts/06-deploy-me-multi.sh
+bash infra/scripts/07-port-forward.sh multi
+curl http://localhost:8080/health   # verify
+
+# --- Teardown ---
+bash infra/scripts/10-teardown.sh
+```
+
+### Infrastructure File Structure
+
+```
+infra/
+  k8s/
+    namespace.yaml                          # matching-engine namespace
+    redpanda/
+      statefulset.yaml                      # Single-node Redpanda
+      service.yaml                          # Headless service
+    matching-engine/
+      shard-a-deployment.yaml               # ME Shard A (symbols A-D)
+      shard-a-service.yaml
+      shard-b-deployment.yaml               # ME Shard B (symbols E-H)
+      shard-b-service.yaml
+      shard-c-deployment.yaml               # ME Shard C (symbols I-L)
+      shard-c-service.yaml
+    edge-gateway/
+      deployment.yaml                       # Symbol-hash routing proxy
+      service.yaml
+    monitoring/
+      prometheus-values.yaml                # Helm values: 5s scrape, remote write
+      grafana-values.yaml                   # Helm values: admin/admin, Prometheus DS
+  scripts/
+    00-prerequisites.sh                     # Verify tools
+    01-create-cluster.sh                    # Create k3d cluster
+    02-deploy-observability.sh              # Deploy Prometheus + Grafana
+    03-deploy-redpanda.sh                   # Deploy Redpanda + create topics
+    04-build-images.sh                      # Build JARs + Docker images + import
+    05-deploy-me-single.sh                  # Deploy 1 shard (ASR 1)
+    06-deploy-me-multi.sh                   # Deploy 3 shards + gateway (ASR 2)
+    07-port-forward.sh                      # Port-forwards (single/multi mode)
+    08-run-asr1-tests.sh                    # Orchestrate ASR 1 k6 tests
+    09-run-asr2-tests.sh                    # Orchestrate ASR 2 k6 tests
+    10-teardown.sh                          # Delete cluster
+    helpers/
+      wait-for-pod.sh                       # Wait for pod readiness
+      pause-redpanda.sh                     # Pause/resume Redpanda (test A4)
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|:---|:---|
+| `k3d cluster create` fails | Make sure Docker is running: `docker info` |
+| Pods stuck in `ImagePullBackOff` | Images not imported. Re-run `bash infra/scripts/04-build-images.sh` |
+| Port-forward dies | Re-run `bash infra/scripts/07-port-forward.sh single` (or `multi`) |
+| Prometheus not scraping ME | Check pod annotations: `kubectl describe pod <me-pod> -n matching-engine` — should have `prometheus.io/scrape: "true"` |
+| Redpanda not starting | Check resources: `kubectl describe pod redpanda-0 -n matching-engine` — may need more memory |
+| `curl localhost:8080` connection refused | Port-forward not running. Check: `ps aux \| grep port-forward` |
+
+---
+
+## Edge Gateway
+
+The Edge Gateway is a lightweight HTTP reverse proxy that routes orders to the correct ME shard based on the order's symbol. It is required for multi-shard (ASR 2) tests.
+
+### How it works
+
+```
+k6 ──POST /orders {"symbol":"TEST-ASSET-E"}──► Edge Gateway
+                                                    │
+                                          Looks up symbol → shard "b"
+                                                    │
+                                          Forwards to http://me-shard-b:8080/orders
+                                                    │
+                                          Returns ME response pass-through
+```
+
+### Symbol-to-Shard Mapping
+
+| Shard | Symbols |
+|:---|:---|
+| `a` | TEST-ASSET-A, TEST-ASSET-B, TEST-ASSET-C, TEST-ASSET-D |
+| `b` | TEST-ASSET-E, TEST-ASSET-F, TEST-ASSET-G, TEST-ASSET-H |
+| `c` | TEST-ASSET-I, TEST-ASSET-J, TEST-ASSET-K, TEST-ASSET-L |
+
+### Build and run standalone
+
+```bash
+cd src/edge-gateway
+./gradlew build
+docker build -t edge-gateway:experiment-v1 .
+
+# Run with ME on port 8081
+ME_SHARD_MAP="a=http://localhost:8081" \
+SHARD_SYMBOLS_MAP="a=TEST-ASSET-A:TEST-ASSET-B:TEST-ASSET-C:TEST-ASSET-D" \
+java -jar build/libs/edge-gateway.jar
+```
+
+### Gateway API
+
+| Method | Path | Purpose |
+|:---|:---|:---|
+| POST | `/orders` | Route order to correct shard by symbol |
+| POST | `/seed/{shardId}` | Forward seed request to specific shard |
+| GET | `/health` | Health check |
+| GET | `/metrics` (port 9091) | Prometheus metrics |
+
+### Gateway Configuration
+
+| Variable | Default | Description |
+|:---|:---|:---|
+| `HTTP_PORT` | `8080` | Gateway listening port |
+| `METRICS_PORT` | `9091` | Prometheus metrics port |
+| `ME_SHARD_MAP` | `a=http://me-shard-a:8080,...` | Shard ID to ME URL mapping |
+| `SHARD_SYMBOLS_MAP` | `a=TEST-ASSET-A:...,b=TEST-ASSET-E:...` | Shard ID to symbols mapping |
+
+### Gateway Metrics
+
+| Metric | Type | Labels |
+|:---|:---|:---|
+| `gw_requests_total` | Counter | `shard`, `status` |
+| `gw_request_duration_seconds` | Histogram | `shard` |
+| `gw_routing_errors_total` | Counter | `reason` |
 
 ---
 

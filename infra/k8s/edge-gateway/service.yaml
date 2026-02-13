@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: edge-gateway
+  namespace: matching-engine
+spec:
+  selector:
+    app: edge-gateway
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 8080
+  - port: 9091
+    name: metrics
+    targetPort: 9091

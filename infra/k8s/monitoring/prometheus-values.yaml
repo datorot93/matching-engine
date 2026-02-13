@@ -1,0 +1,56 @@
+server:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  global:
+    scrape_interval: 5s
+    scrape_timeout: 5s
+  service:
+    type: NodePort
+    nodePort: 30090
+  extraArgs:
+    web.enable-remote-write-receiver: ""
+
+# Additional scrape configs for ME pods (must be at top level, not under server)
+extraScrapeConfigs: |
+  - job_name: 'matching-engine'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - matching-engine
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: (.+);(.+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: replace
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_label_shard]
+        action: replace
+        target_label: shard
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
