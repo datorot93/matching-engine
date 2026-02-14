@@ -14,10 +14,11 @@ A high-performance, single-threaded matching engine for a centralized order book
 8. [How to Test Locally](#how-to-test-locally)
 9. [Deploy to Kubernetes (k3d)](#deploy-to-kubernetes-k3d)
 10. [Edge Gateway](#edge-gateway)
-11. [API Reference](#api-reference)
-12. [Configuration](#configuration)
-13. [Prometheus Metrics](#prometheus-metrics)
-14. [Docker](#docker)
+11. [Load Testing (k6)](#load-testing-k6)
+12. [API Reference](#api-reference)
+13. [Configuration](#configuration)
+14. [Prometheus Metrics](#prometheus-metrics)
+15. [Docker](#docker)
 
 ---
 
@@ -723,6 +724,179 @@ java -jar build/libs/edge-gateway.jar
 | `gw_requests_total` | Counter | `shard`, `status` |
 | `gw_request_duration_seconds` | Histogram | `shard` |
 | `gw_routing_errors_total` | Counter | `reason` |
+
+---
+
+## Load Testing (k6)
+
+The project includes a complete set of [k6](https://k6.io/) load test scripts to validate the two Architecturally Significant Requirements (ASRs):
+
+- **ASR 1 (Latency):** p99 matching latency < 200ms at 1,000 matches/min (single shard)
+- **ASR 2 (Scalability):** Sustain >= 5,000 matches/min across 3 shards
+
+### File Structure
+
+```
+src/k6/
+├── lib/
+│   ├── config.js              # Shared constants: URLs, symbols, prices, thresholds
+│   ├── orderGenerator.js      # Synthetic order generation (aggressive/passive/mixed)
+│   └── seedHelper.js          # Order Book seeding helpers (direct and via gateway)
+├── test-asr1-a1-warmup.js     # A1: JVM warm-up (2 min, 500/min) — discard results
+├── test-asr1-a2-normal-load.js # A2: Normal load (5 min, 1,020/min) — PRIMARY ASR 1
+├── test-asr1-a3-depth-variation.js # A3: Shallow/medium/deep OB (3x3 min)
+├── test-asr1-a4-kafka-degradation.js # A4: Decoupling proof (3 min, pause Redpanda at t=60s)
+├── test-asr2-b1-baseline.js   # B1: Single shard via gateway (3 min, baseline)
+├── test-asr2-b2-peak-sustained.js # B2: 3 shards sustained (5 min, 5,040/min) — PRIMARY ASR 2
+├── test-asr2-b3-ramp.js       # B3: Ramp 1K→2.5K→5K/min (10 min)
+├── test-asr2-b4-hot-symbol.js # B4: 80% traffic to 1 symbol (5 min)
+└── seed-orderbooks.js         # Standalone seeder (single/multi modes)
+```
+
+### Test Summary
+
+| Test | Script | Rate | Duration | Purpose |
+|:---|:---|:---|:---|:---|
+| A1 | `test-asr1-a1-warmup.js` | 500/min | 2 min | JVM warm-up, no thresholds |
+| **A2** | `test-asr1-a2-normal-load.js` | 1,020/min | 5 min | **PRIMARY ASR 1** — p99 < 200ms |
+| A3 | `test-asr1-a3-depth-variation.js` | 1,020/min | 3x3 min | Order Book depth impact |
+| A4 | `test-asr1-a4-kafka-degradation.js` | 1,020/min | 3 min | Kafka decoupling proof |
+| B1 | `test-asr2-b1-baseline.js` | 1,020/min | 3 min | Single shard via gateway |
+| **B2** | `test-asr2-b2-peak-sustained.js` | 5,040/min | 5 min | **PRIMARY ASR 2** — 3 shards |
+| B3 | `test-asr2-b3-ramp.js` | 1K→5K/min | 10 min | Progressive ramp |
+| B4 | `test-asr2-b4-hot-symbol.js` | 5,040/min | 5 min | Hot symbol (80% to 1 symbol) |
+
+### Prerequisites
+
+- **k6** installed (`k6 version` to verify)
+- Matching Engine running (either locally via Java or on k3d)
+- For ASR 2 tests: All 3 shards + Edge Gateway deployed
+
+### How to Run Individual Tests
+
+**ASR 1 tests** target the ME shard directly (no gateway):
+
+```bash
+# A1: Warm-up (always run first to warm the JVM)
+k6 run -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/test-asr1-a1-warmup.js
+
+# A2: Normal load — PRIMARY ASR 1 TEST
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/test-asr1-a2-normal-load.js
+
+# A3: Depth variation
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/test-asr1-a3-depth-variation.js
+
+# A4: Kafka degradation (pause Redpanda manually at t=60s)
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/test-asr1-a4-kafka-degradation.js
+```
+
+**ASR 2 tests** target the Edge Gateway (routes to all 3 shards):
+
+```bash
+# B1: Baseline (single shard through gateway)
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e GATEWAY_URL=http://localhost:8081 \
+  src/k6/test-asr2-b1-baseline.js
+
+# B2: Peak sustained — PRIMARY ASR 2 TEST
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e GATEWAY_URL=http://localhost:8081 \
+  src/k6/test-asr2-b2-peak-sustained.js
+
+# B3: Ramp (1K → 2.5K → 5K matches/min)
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e GATEWAY_URL=http://localhost:8081 \
+  src/k6/test-asr2-b3-ramp.js
+
+# B4: Hot symbol (80% traffic to TEST-ASSET-A)
+k6 run \
+  --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
+  -e GATEWAY_URL=http://localhost:8081 \
+  src/k6/test-asr2-b4-hot-symbol.js
+```
+
+### Standalone Seeding
+
+Seed Order Books without running load tests:
+
+```bash
+# Single shard (direct to ME)
+k6 run -e SEED_MODE=single -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/seed-orderbooks.js
+
+# All 3 shards (via gateway)
+k6 run -e SEED_MODE=multi -e GATEWAY_URL=http://localhost:8081 \
+  src/k6/seed-orderbooks.js
+
+# Custom depth and levels
+k6 run -e SEED_MODE=single -e SEED_DEPTH=1000 -e SEED_LEVELS=100 \
+  -e ME_SHARD_A_URL=http://localhost:8081 \
+  src/k6/seed-orderbooks.js
+```
+
+### Environment Variables
+
+| Variable | Default | Used By | Description |
+|:---|:---|:---|:---|
+| `ME_SHARD_A_URL` | `http://localhost:8081` | ASR 1 tests | Direct URL to ME Shard A |
+| `GATEWAY_URL` | `http://localhost:8081` | ASR 2 tests | Edge Gateway URL |
+| `SEED_MODE` | `single` | `seed-orderbooks.js` | `single` or `multi` |
+| `SEED_DEPTH` | `500` | `seed-orderbooks.js` | Orders per symbol |
+| `SEED_LEVELS` | `50` | `seed-orderbooks.js` | Price levels for seed orders |
+
+### Pass/Fail Criteria
+
+**ASR 1 (from test A2):**
+
+| Metric | Pass | Fail |
+|:---|:---|:---|
+| p99 `http_req_duration` | < 200ms | >= 200ms |
+| p99 `match_latency_ms` | < 200ms | >= 200ms |
+| Error rate | < 1% | >= 1% |
+
+**ASR 2 (from test B2):**
+
+| Metric | Pass | Fail |
+|:---|:---|:---|
+| Aggregate throughput | >= 4,750 matches/min for >= 4 min | < 4,750 |
+| Per-shard p99 latency | < 200ms | >= 200ms |
+| Error rate | < 1% | >= 1% |
+
+### Prometheus Integration
+
+All tests support writing metrics to Prometheus via `--out experimental-prometheus-rw`. This enables real-time visualization in Grafana during test runs. The `--out` flag is optional — tests work without it, but results won't appear in Grafana.
+
+### How Order Matching Works in Tests
+
+The tests use a **60/40 aggressive/passive split**:
+- **60% aggressive orders:** BUY orders priced above the best ask, guaranteeing immediate matches
+- **40% passive orders:** BUY orders priced below the best bid, which rest in the Order Book
+
+Each test's `setup()` function seeds the Order Book with resting SELL orders before load begins, ensuring there are always orders to match against. Prices are in **cents** (e.g., `15000` = $150.00).
+
+### Validating Scripts
+
+Verify all scripts parse correctly without running them:
+
+```bash
+for script in src/k6/test-*.js src/k6/seed-orderbooks.js; do
+  echo "Checking: $script"
+  k6 inspect "$script" > /dev/null && echo "  OK" || echo "  FAIL"
+done
+```
 
 ---
 
