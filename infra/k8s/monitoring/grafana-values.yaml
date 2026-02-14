@@ -10,7 +10,7 @@ service:
   type: NodePort
   nodePort: 30000
 
-adminPassword: admin
+adminPassword: admin1234
 
 datasources:
   datasources.yaml:
@@ -21,6 +21,10 @@ datasources:
       url: http://prometheus-server.monitoring.svc:80
       access: proxy
       isDefault: true
+    - name: Loki
+      type: loki
+      url: http://loki.monitoring.svc:3100
+      access: proxy
 
 dashboardProviders:
   dashboardproviders.yaml:
@@ -35,6 +39,13 @@ dashboardProviders:
       options:
         path: /var/lib/grafana/dashboards/default
 
-# dashboardsConfigMaps will be enabled once the grafana-dashboards ConfigMap is created
-# dashboardsConfigMaps:
-#   default: grafana-dashboards
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: /var/lib/grafana/dashboards/default
+    searchNamespace: monitoring
+
+dashboardsConfigMaps:
+  default: grafana-dashboards

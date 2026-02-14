@@ -549,8 +549,8 @@ This makes services accessible locally:
 
 | Service | URL | Mode |
 |:---|:---|:---|
-| ME Shard A | http://localhost:8080 | `single` |
-| Edge Gateway | http://localhost:8080 | `multi` |
+| ME Shard A | http://localhost:8081 | `single` |
+| Edge Gateway | http://localhost:8081 | `multi` |
 | Prometheus | http://localhost:9090 | both |
 | Grafana | http://localhost:3000 | both |
 
@@ -558,10 +558,10 @@ This makes services accessible locally:
 
 ```bash
 # Health check (ME or Gateway depending on mode)
-curl http://localhost:8080/health
+curl http://localhost:8081/health
 
 # Submit a test order
-curl -X POST http://localhost:8080/orders \
+curl -X POST http://localhost:8081/orders \
   -H "Content-Type: application/json" \
   -d '{"orderId":"k8s-test-1","symbol":"TEST-ASSET-A","side":"BUY","type":"LIMIT","price":15000,"quantity":100}'
 
@@ -599,12 +599,12 @@ bash infra/scripts/04-build-images.sh
 # --- ASR 1 (single shard) ---
 bash infra/scripts/05-deploy-me-single.sh
 bash infra/scripts/07-port-forward.sh single
-curl http://localhost:8080/health   # verify
+curl http://localhost:8081/health   # verify
 
 # --- ASR 2 (multi shard) ---
 bash infra/scripts/06-deploy-me-multi.sh
 bash infra/scripts/07-port-forward.sh multi
-curl http://localhost:8080/health   # verify
+curl http://localhost:8081/health   # verify
 
 # --- Teardown ---
 bash infra/scripts/10-teardown.sh
@@ -658,7 +658,7 @@ infra/
 | Port-forward dies | Re-run `bash infra/scripts/07-port-forward.sh single` (or `multi`) |
 | Prometheus not scraping ME | Check pod annotations: `kubectl describe pod <me-pod> -n matching-engine` — should have `prometheus.io/scrape: "true"` |
 | Redpanda not starting | Check resources: `kubectl describe pod redpanda-0 -n matching-engine` — may need more memory |
-| `curl localhost:8080` connection refused | Port-forward not running. Check: `ps aux \| grep port-forward` |
+| `curl localhost:8081` connection refused | Port-forward not running. Check: `ps aux \| grep port-forward` |
 
 ---
 

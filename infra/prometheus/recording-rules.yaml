@@ -1,0 +1,45 @@
+groups:
+  - name: matching-engine-experiment
+    interval: 5s
+    rules:
+      # ASR 1: Primary metric -- p99 matching latency per shard
+      - record: me:match_duration_p99:30s
+        expr: histogram_quantile(0.99, sum(rate(me_match_duration_seconds_bucket[30s])) by (le, shard))
+
+      - record: me:match_duration_p95:30s
+        expr: histogram_quantile(0.95, sum(rate(me_match_duration_seconds_bucket[30s])) by (le, shard))
+
+      - record: me:match_duration_p50:30s
+        expr: histogram_quantile(0.50, sum(rate(me_match_duration_seconds_bucket[30s])) by (le, shard))
+
+      # ASR 2: Primary metric -- aggregate throughput (matches/min)
+      - record: me:matches_per_minute:total
+        expr: sum(rate(me_matches_total[1m])) * 60
+
+      # ASR 2: Per-shard throughput (matches/min)
+      - record: me:matches_per_minute:by_shard
+        expr: rate(me_matches_total[1m]) * 60
+
+      # Latency budget: average per sub-component
+      - record: me:validation_avg_seconds
+        expr: rate(me_order_validation_duration_seconds_sum[1m]) / rate(me_order_validation_duration_seconds_count[1m])
+
+      - record: me:orderbook_insertion_avg_seconds
+        expr: rate(me_orderbook_insertion_duration_seconds_sum[1m]) / rate(me_orderbook_insertion_duration_seconds_count[1m])
+
+      - record: me:matching_algorithm_avg_seconds
+        expr: rate(me_matching_algorithm_duration_seconds_sum[1m]) / rate(me_matching_algorithm_duration_seconds_count[1m])
+
+      - record: me:wal_append_avg_seconds
+        expr: rate(me_wal_append_duration_seconds_sum[1m]) / rate(me_wal_append_duration_seconds_count[1m])
+
+      - record: me:event_publish_avg_seconds
+        expr: rate(me_event_publish_duration_seconds_sum[1m]) / rate(me_event_publish_duration_seconds_count[1m])
+
+      # GC collection time rate (ZGC Pauses -- seconds of GC pause per second)
+      - record: me:gc_pause_rate:1m
+        expr: rate(jvm_gc_collection_seconds_sum{gc="ZGC Pauses"}[1m])
+
+      # Orders received rate
+      - record: me:orders_per_second
+        expr: sum(rate(me_orders_received_total[30s]))

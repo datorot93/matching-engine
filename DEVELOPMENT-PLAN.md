@@ -262,7 +262,7 @@ bash 07-port-forward.sh single
 
 # Verify
 kubectl get pods -A
-curl http://localhost:8080/health
+curl http://localhost:8081/health
 curl http://localhost:9090/api/v1/targets | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin)['data']['activeTargets'], indent=2))"
 ```
 
@@ -302,7 +302,7 @@ for script in src/k6/test-*.js src/k6/seed-orderbooks.js; do
 done
 
 # Run warm-up test against live cluster
-k6 run -e ME_SHARD_A_URL=http://localhost:8080 src/k6/test-asr1-a1-warmup.js
+k6 run -e ME_SHARD_A_URL=http://localhost:8081 src/k6/test-asr1-a1-warmup.js
 ```
 
 ### Outputs
@@ -489,13 +489,13 @@ bash 10-teardown.sh
 # ASR 1: Normal load test only (primary ASR 1 test)
 k6 run \
   --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
-  -e ME_SHARD_A_URL=http://localhost:8080 \
+  -e ME_SHARD_A_URL=http://localhost:8081 \
   src/k6/test-asr1-a2-normal-load.js
 
 # ASR 2: Peak sustained test only (primary ASR 2 test)
 k6 run \
   --out experimental-prometheus-rw=http://localhost:9090/api/v1/write \
-  -e GATEWAY_URL=http://localhost:8080 \
+  -e GATEWAY_URL=http://localhost:8081 \
   src/k6/test-asr2-b2-peak-sustained.js
 ```
 
@@ -503,7 +503,7 @@ k6 run \
 
 | Service | URL | Credentials |
 |:---|:---|:---|
-| Matching Engine / Edge Gateway | http://localhost:8080 | -- |
+| Matching Engine / Edge Gateway | http://localhost:8081 | -- |
 | Prometheus | http://localhost:9090 | -- |
 | Grafana | http://localhost:3000 | admin / admin |
 

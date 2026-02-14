@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 K6_DIR="${SCRIPT_DIR}/../../src/k6"
 PROM_URL="http://localhost:9090/api/v1/write"
-ME_URL="http://localhost:8080"
+ME_URL="http://localhost:${ME_PORT:-8081}"
 
 echo "========================================="
 echo "  ASR 1: LATENCY VALIDATION"
