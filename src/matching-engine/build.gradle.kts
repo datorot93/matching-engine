@@ -32,9 +32,10 @@ dependencies {
     // JSON
     implementation("com.google.code.gson:gson:2.11.0")
 
-    // SLF4J + simple logger
+    // SLF4J + Logback (structured JSON logging)
     implementation("org.slf4j:slf4j-api:2.0.12")
-    implementation("org.slf4j:slf4j-simple:2.0.12")
+    implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 }
 
 tasks.jar {

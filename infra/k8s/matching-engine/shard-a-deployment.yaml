@@ -41,6 +41,8 @@ spec:
           value: "/app/wal"
         - name: WAL_SIZE_MB
           value: "64"
+        - name: ENABLE_DETAILED_LOGGING
+          value: "true"
         ports:
         - containerPort: 8080
           name: http

@@ -21,7 +21,15 @@
       "Bash(kubectl create configmap:*)",
       "Bash(kubectl apply:*)",
       "Bash(kubectl wait:*)",
-      "Bash(kubectl describe:*)"
+      "Bash(kubectl describe:*)",
+      "Bash(bash /home/datorot/matching-engine/infra/scripts/08-run-asr1-tests.sh)",
+      "Bash(bash /home/datorot/matching-engine/infra/scripts/collect-results.sh:*)",
+      "Bash(bash infra/scripts/04-build-images.sh)",
+      "Bash(bash infra/scripts/06-deploy-me-multi.sh)",
+      "Bash(bash infra/scripts/07-port-forward.sh multi)",
+      "Bash(bash infra/scripts/09-run-asr2-tests.sh)",
+      "Bash(bash infra/scripts/collect-results.sh:*)",
+      "Bash(chmod +x /home/datorot/matching-engine/infra/cloud/aws/*.sh /home/datorot/matching-engine/infra/cloud/oci/*.sh)"
     ]
   }
 }

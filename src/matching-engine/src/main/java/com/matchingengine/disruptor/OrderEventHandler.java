@@ -9,6 +9,7 @@ import com.matchingengine.domain.OrderBook;
 import com.matchingengine.domain.OrderBookManager;
 import com.matchingengine.domain.OrderId;
 import com.matchingengine.domain.Price;
+import com.matchingengine.logging.MatchingStats;
 import com.matchingengine.matching.PriceTimePriorityMatcher;
 import com.matchingengine.metrics.MetricsRegistry;
 import com.matchingengine.publishing.EventPublisher;
@@ -17,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 /**
  * The single-threaded event processor. Implements EventHandler<OrderEvent>.
@@ -49,6 +52,8 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
     private final MetricsRegistry metrics;
     private final ShardConfig config;
     private final long ringBufferSize;
+    private final MatchingStats stats;
+    private final boolean detailedLogging;
 
     public OrderEventHandler(OrderBookManager bookManager,
                              PriceTimePriorityMatcher matcher,
@@ -56,7 +61,8 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
                              EventPublisher publisher,
                              MetricsRegistry metrics,
                              ShardConfig config,
-                             long ringBufferSize) {
+                             long ringBufferSize,
+                             MatchingStats stats) {
         this.bookManager = bookManager;
         this.matcher = matcher;
         this.wal = wal;
@@ -64,6 +70,8 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
         this.metrics = metrics;
         this.config = config;
         this.ringBufferSize = ringBufferSize;
+        this.stats = stats;
+        this.detailedLogging = "true".equalsIgnoreCase(System.getenv("ENABLE_DETAILED_LOGGING"));
     }
 
 
@@ -75,8 +83,6 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
         }
 
         String shardId = config.getShardId();
-        // Check for detailed logging flag (parsed from env)
-        boolean detailedLogging = "true".equalsIgnoreCase(System.getenv("ENABLE_DETAILED_LOGGING"));
 
         try {
             // 1. Validate order
@@ -87,8 +93,18 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
                     .observe(nanosToSeconds(validationEnd - validationStart));
 
             if (!valid) {
-                logger.warn("Rejected order {}: unknown symbol {} for shard {}",
-                        event.orderId, event.symbol, shardId);
+                stats.ordersRejected.incrementAndGet();
+                if (detailedLogging) {
+                    logger.warn("Order rejected",
+                            keyValue("event", "ORDER_REJECTED"),
+                            keyValue("shard", shardId),
+                            keyValue("orderId", event.orderId),
+                            keyValue("symbol", event.symbol),
+                            keyValue("reason", "unknown symbol " + event.symbol + " for shard " + shardId));
+                } else {
+                    logger.warn("Rejected order {}: unknown symbol {} for shard {}",
+                            event.orderId, event.symbol, shardId);
+                }
                 event.clear();
                 return;
             }
@@ -104,9 +120,22 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
                     event.timestamp
             );
 
+            // Track order by side
+            if ("BUY".equals(event.side.name())) {
+                stats.buyOrdersReceived.incrementAndGet();
+            } else {
+                stats.sellOrdersReceived.incrementAndGet();
+            }
+
             if (detailedLogging) {
-                logger.info("{\"event\":\"ORDER_RECEIVED\",\"orderId\":\"{}\",\"symbol\":\"{}\",\"side\":\"{}\",\"price\":{},\"qty\":{}}",
-                        order.getId().value(), order.getSymbol(), order.getSide(), order.getLimitPrice().cents(), order.getInitialQuantity());
+                logger.info("Order received",
+                        keyValue("event", "ORDER_RECEIVED"),
+                        keyValue("shard", shardId),
+                        keyValue("orderId", order.getId().value()),
+                        keyValue("symbol", order.getSymbol()),
+                        keyValue("side", order.getSide().name()),
+                        keyValue("price", order.getLimitPrice().cents()),
+                        keyValue("quantity", order.getOriginalQuantity()));
             }
 
             // 3. Get or create OrderBook
@@ -127,14 +156,30 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
             metrics.matchingAlgorithmDuration.labelValues(shardId)
                     .observe(nanosToSeconds(matchEnd - matchStart));
 
+            // Track matches
+            stats.matchesExecuted.addAndGet(resultSet.getMatchCount());
+
             if (detailedLogging) {
                 for (MatchResult match : resultSet.getResults()) {
-                   logger.info("{\"event\":\"MATCH\",\"taker\":\"{}\",\"maker\":\"{}\",\"symbol\":\"{}\",\"price\":{},\"qty\":{}}",
-                           match.getTakerOrderId(), match.getMakerOrderId(), match.getSymbol(), match.getPrice(), match.getQuantity());
+                    logger.info("Match executed",
+                            keyValue("event", "MATCH_EXECUTED"),
+                            keyValue("shard", shardId),
+                            keyValue("matchId", match.getMatchId()),
+                            keyValue("takerOrderId", match.getTakerOrderId()),
+                            keyValue("makerOrderId", match.getMakerOrderId()),
+                            keyValue("symbol", match.getSymbol()),
+                            keyValue("takerSide", order.getSide().name()),
+                            keyValue("executionPrice", match.getExecutionPrice()),
+                            keyValue("quantity", match.getExecutionQuantity()));
                 }
                 if (order.getRemainingQuantity() > 0) {
-                    logger.info("{\"event\":\"ORDER_RESTING\",\"orderId\":\"{}\",\"symbol\":\"{}\",\"remainingQty\":{}}",
-                            order.getId().value(), order.getSymbol(), order.getRemainingQuantity());
+                    logger.info("Order resting",
+                            keyValue("event", "ORDER_RESTING"),
+                            keyValue("shard", shardId),
+                            keyValue("orderId", order.getId().value()),
+                            keyValue("symbol", order.getSymbol()),
+                            keyValue("side", order.getSide().name()),
+                            keyValue("remainingQuantity", order.getRemainingQuantity()));
                 }
             }
 
@@ -168,10 +213,6 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
             updateOrderBookGauges(shardId);
 
             // 10. Update ring buffer utilization
-            // Approximate utilization: sequence modulo ringBufferSize gives the
-            // position within the current ring buffer lap. We compute a rough
-            // fill level as the fraction of the buffer that has been claimed but
-            // potentially not yet processed.
             double utilization = ((double) (sequence % ringBufferSize)) / ringBufferSize;
             metrics.ringbufferUtilization.labelValues(shardId).set(utilization);
 

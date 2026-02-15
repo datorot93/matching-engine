@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- JSON structured logging to stdout (for Promtail/Loki collection) -->
+    <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <includeContext>false</includeContext>
+            <includeCallerData>false</includeCallerData>
+            <customFields>{"service":"matching-engine"}</customFields>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <!-- Async wrapper: never blocks the matching thread -->
+    <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <neverBlock>true</neverBlock>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="JSON_STDOUT"/>
+    </appender>
+
+    <!-- Quiet down noisy libraries -->
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="io.prometheus" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC_JSON"/>
+    </root>
+
+</configuration>

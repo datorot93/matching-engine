@@ -14,6 +14,8 @@ import com.matchingengine.http.HealthHttpHandler;
 import com.matchingengine.http.OrderHttpHandler;
 import com.matchingengine.http.SeedHttpHandler;
 import com.matchingengine.matching.PriceTimePriorityMatcher;
+import com.matchingengine.logging.MatchingStats;
+import com.matchingengine.logging.PeriodicStatsLogger;
 import com.matchingengine.metrics.MetricsRegistry;
 import com.matchingengine.publishing.EventPublisher;
 import com.matchingengine.wal.WriteAheadLog;
@@ -94,15 +96,21 @@ public class MatchingEngineApp {
                 new YieldingWaitStrategy()
         );
 
-        // 8. Register OrderEventHandler
+        // 8. Register OrderEventHandler with shared stats
+        MatchingStats matchingStats = new MatchingStats();
         OrderEventHandler handler = new OrderEventHandler(
-                bookManager, matcher, wal, publisher, metrics, config, ringBufferSize);
+                bookManager, matcher, wal, publisher, metrics, config, ringBufferSize, matchingStats);
         disruptor.handleEventsWith(handler);
 
         // 9. Start the Disruptor
         disruptor.start();
         RingBuffer<OrderEvent> ringBuffer = disruptor.getRingBuffer();
         logger.info("Disruptor started. Ring buffer size: {}", ringBufferSize);
+
+        // 9b. Start periodic stats logger (every 10 seconds, separate daemon thread)
+        PeriodicStatsLogger statsLogger = new PeriodicStatsLogger(
+                matchingStats, bookManager, config.getShardId(), 10);
+        statsLogger.start();
 
         // 10. Start HTTP server
         HttpServer httpServer;
@@ -141,20 +149,11 @@ public class MatchingEngineApp {
                 logger.info("WAL closed.");
             }
             publisher.close();
-            
-            // Print Test Summary Table
-            System.out.println("\n=======================================================");
-            System.out.println("               MATCHING ENGINE SUMMARY               ");
-            System.out.println("=======================================================");
-            System.out.printf(" %-25s | %10s \n", "Metric", "Value");
-            System.out.println("---------------------------|------------");
-            
-            // Note: In a real app we'd access the counters directly. 
-            // For now, we are relying on Prometheus registry values if accessible, 
-            // but since counters are in MetricsRegistry, let's just log completion message cleanly.
-            // A meaningful table requires accessing the Counter objects' .get() method which isn't standard in the library used without casting.
-            // So we will stick to a clean shutdown message.
-            
+
+            // Log final lifetime summary
+            statsLogger.logShutdownSummary();
+            statsLogger.stop();
+
             metrics.close();
             logger.info("Matching Engine shut down complete.");
         }));
