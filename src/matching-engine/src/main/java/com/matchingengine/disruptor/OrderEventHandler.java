@@ -66,6 +66,7 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
         this.ringBufferSize = ringBufferSize;
     }
 
+
     @Override
     public void onEvent(OrderEvent event, long sequence, boolean endOfBatch) {
         if (event.orderId == null) {
@@ -74,6 +75,8 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
         }
 
         String shardId = config.getShardId();
+        // Check for detailed logging flag (parsed from env)
+        boolean detailedLogging = "true".equalsIgnoreCase(System.getenv("ENABLE_DETAILED_LOGGING"));
 
         try {
             // 1. Validate order
@@ -101,6 +104,11 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
                     event.timestamp
             );
 
+            if (detailedLogging) {
+                logger.info("{\"event\":\"ORDER_RECEIVED\",\"orderId\":\"{}\",\"symbol\":\"{}\",\"side\":\"{}\",\"price\":{},\"qty\":{}}",
+                        order.getId().value(), order.getSymbol(), order.getSide(), order.getLimitPrice().cents(), order.getInitialQuantity());
+            }
+
             // 3. Get or create OrderBook
             long insertStart = System.nanoTime();
             OrderBook book = bookManager.getOrCreateBook(event.symbol);
@@ -118,6 +126,17 @@ public class OrderEventHandler implements EventHandler<OrderEvent> {
             long matchEnd = System.nanoTime();
             metrics.matchingAlgorithmDuration.labelValues(shardId)
                     .observe(nanosToSeconds(matchEnd - matchStart));
+
+            if (detailedLogging) {
+                for (MatchResult match : resultSet.getResults()) {
+                   logger.info("{\"event\":\"MATCH\",\"taker\":\"{}\",\"maker\":\"{}\",\"symbol\":\"{}\",\"price\":{},\"qty\":{}}",
+                           match.getTakerOrderId(), match.getMakerOrderId(), match.getSymbol(), match.getPrice(), match.getQuantity());
+                }
+                if (order.getRemainingQuantity() > 0) {
+                    logger.info("{\"event\":\"ORDER_RESTING\",\"orderId\":\"{}\",\"symbol\":\"{}\",\"remainingQty\":{}}",
+                            order.getId().value(), order.getSymbol(), order.getRemainingQuantity());
+                }
+            }
 
             // 5. Append to WAL
             long walStart = System.nanoTime();

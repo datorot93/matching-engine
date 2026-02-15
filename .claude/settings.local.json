@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(k6 version:*)",
+      "Bash(helm upgrade:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(python3 -c \" import sys, json data = json.load\\(sys.stdin\\) groups = data.get\\(''data'', {}\\).get\\(''groups'', []\\) for g in groups: if g.get\\(''name''\\) == ''matching-engine-experiment'': rules = g.get\\(''rules'', []\\) print\\(f''Group: {g[\"\"name\"\"]} \\({len\\(rules\\)} rules, interval: {g.get\\(\"\"interval\"\",\"\"?\"\"\\)}s\\)''\\) for r in rules: print\\(f'' - {r[\"\"name\"\"]}''\\) break else: print\\(''Recording rules group NOT FOUND''\\) \")",
+      "Bash(python3 -c \" import sys, json data = json.load\\(sys.stdin\\) if ''dashboard'' in data: d = data[''dashboard''] print\\(f''Dashboard found!''\\) print\\(f'' Title: {d.get\\(\"\"title\"\", \"\"?\"\"\\)}''\\) print\\(f'' UID: {d.get\\(\"\"uid\"\", \"\"?\"\"\\)}''\\) print\\(f'' Panels: {len\\(d.get\\(\"\"panels\"\", []\\)\\)}''\\) for p in d.get\\(''panels'', []\\): print\\(f'' - Panel {p[\"\"id\"\"]}: {p[\"\"title\"\"]}''\\) print\\(f'' Refresh: {d.get\\(\"\"refresh\"\", \"\"?\"\"\\)}''\\) print\\(f'' Tags: {d.get\\(\"\"tags\"\", []\\)}''\\) else: print\\(f''Dashboard NOT found: {data.get\\(\"\"message\"\", \"\"unknown error\"\"\\)}''\\) \")",
+      "Bash(bash /home/datorot/matching-engine/infra/scripts/smoke-test.sh)",
+      "Bash(python3:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(kubectl rollout status:*)",
+      "Bash(k6 inspect:*)",
+      "Bash(k6 run:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(kubectl get:*)",
+      "Bash(helm repo list:*)",
+      "Bash(helm repo update:*)",
+      "Bash(helm install:*)",
+      "Bash(kubectl create configmap:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl wait:*)",
+      "Bash(kubectl describe:*)"
+    ]
+  }
+}

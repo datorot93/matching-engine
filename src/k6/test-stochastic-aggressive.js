@@ -66,10 +66,10 @@ const LAMBDA = 300;
 export const options = {
     stages: [
         // Quick warm-up: ramp to 13 VUs in 2 seconds
-        { duration: '5s', target: 15 },
+        { duration: '5s', target: 50 },
 
         // AGGRESSIVE BLAST: 10 seconds at full rate
-        { duration: '15s', target: 15 },
+        { duration: '15s', target: 150 },
 
         // Immediate shutdown
         { duration: '5s', target: 0 },
