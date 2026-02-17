@@ -38,11 +38,11 @@ export const options = {
     scenarios: {
         peak_sustained: {
             executor:        'constant-arrival-rate',
-            rate:            84,           // ~84 orders/sec = ~5,040/min
+            rate:            1300,           // ~84 orders/sec = ~5,040/min
             timeUnit:        '1s',
-            duration:        '5m',
+            duration:        '2m',
             preAllocatedVUs: 100,
-            maxVUs:          200,
+            maxVUs:          300,
         },
     },
     thresholds: {

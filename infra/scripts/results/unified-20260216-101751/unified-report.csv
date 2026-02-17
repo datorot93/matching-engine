@@ -1,0 +1,10 @@
+requirement,metric,value,threshold,status
+ASR1,max_p99_latency_ms,0,200,UNKNOWN
+ASR1,min_success_rate_pct,100,99,UNKNOWN
+ASR1,max_error_rate_pct,0,1,UNKNOWN
+ASR1,total_runs,40,N/A,N/A
+ASR1,total_requests,0,N/A,N/A
+ASR2,throughput_matches_per_min,N/A,4750,UNKNOWN
+ASR2,shard_a_p99_latency_ms,N/A,200,UNKNOWN
+ASR2,shard_b_p99_latency_ms,N/A,200,UNKNOWN
+ASR2,shard_c_p99_latency_ms,N/A,200,UNKNOWN

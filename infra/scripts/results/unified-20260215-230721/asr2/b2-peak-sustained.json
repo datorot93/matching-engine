@@ -1,0 +1,178 @@
+{
+    "metrics": {
+        "http_reqs": {
+            "count": 5043,
+            "rate": 80.32065494963658
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0
+        },
+        "vus_max": {
+            "min": 100,
+            "max": 100,
+            "value": 100
+        },
+        "http_req_sending": {
+            "p(95)": 0.07087239999999996,
+            "avg": 0.05437143565338095,
+            "min": 0.011645,
+            "med": 0.047446,
+            "max": 19.716769,
+            "p(90)": 0.062475
+        },
+        "http_req_waiting": {
+            "avg": 8.790106860400583,
+            "min": 4.403152,
+            "med": 6.670668,
+            "max": 630.983321,
+            "p(90)": 11.1792384,
+            "p(95)": 13.443577199999998
+        },
+        "checks": {
+            "passes": 5043,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 7.003603,
+            "max": 642.842703,
+            "p(90)": 11.4921214,
+            "p(95)": 13.693652199999992,
+            "avg": 9.361559279992077,
+            "min": 4.532061
+        },
+        "http_req_blocked": {
+            "p(90)": 0.0091418,
+            "p(95)": 0.010890299999999997,
+            "avg": 0.38754455125917164,
+            "min": 0.002948,
+            "med": 0.006348,
+            "max": 1086.2444
+        },
+        "vus": {
+            "value": 1,
+            "min": 0,
+            "max": 3
+        },
+        "iterations": {
+            "count": 5040,
+            "rate": 80.27287347732864
+        },
+        "data_sent": {
+            "count": 1937316,
+            "rate": 30855.936935238973
+        },
+        "data_received": {
+            "count": 977732,
+            "rate": 15572.49149419355
+        },
+        "iteration_duration": {
+            "min": 4.766613,
+            "med": 7.2862615,
+            "max": 1100.97575,
+            "p(90)": 12.133288200000004,
+            "p(95)": 15.574154450000002,
+            "avg": 9.22016436031748
+        },
+        "match_latency_ms": {
+            "avg": 9.246135866666672,
+            "min": 4.532061,
+            "med": 7.003157,
+            "max": 642.842703,
+            "p(90)": 11.4895806,
+            "p(95)": 13.647857400000003,
+            "thresholds": {
+                "p(99)<200": false
+            }
+        },
+        "http_req_receiving": {
+            "p(90)": 0.3584358,
+            "p(95)": 0.406964,
+            "avg": 0.5170809839381306,
+            "min": 0.023068,
+            "med": 0.276586,
+            "max": 605.147275
+        },
+        "http_req_connecting": {
+            "avg": 0.37853106781677587,
+            "min": 0,
+            "med": 0,
+            "max": 1086.139431,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 5043,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "match_count": {
+            "count": 5040,
+            "rate": 80.27287347732864
+        },
+        "http_req_duration": {
+            "max": 642.842703,
+            "p(90)": 11.4921214,
+            "p(95)": 13.693652199999992,
+            "avg": 9.361559279992077,
+            "min": 4.532061,
+            "med": 7.003603,
+            "thresholds": {
+                "p(99)<200": false
+            }
+        }
+    },
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "seed shard a status is 200": {
+                            "name": "seed shard a status is 200",
+                            "path": "::setup::seed shard a status is 200",
+                            "id": "c91a68fe615f4172986f965dea3190ae",
+                            "passes": 1,
+                            "fails": 0
+                        },
+                        "seed shard b status is 200": {
+                            "path": "::setup::seed shard b status is 200",
+                            "id": "0e4b7e9b4f0bd72cdaa7c6705c00c490",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "seed shard b status is 200"
+                        },
+                        "seed shard c status is 200": {
+                            "name": "seed shard c status is 200",
+                            "path": "::setup::seed shard c status is 200",
+                            "id": "5081bfd2b609a536d4ed41927d841023",
+                            "passes": 1,
+                            "fails": 0
+                        }
+                    }
+            }
+        },
+        "checks": {
+            "status is 200": {
+                "path": "::status is 200",
+                "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                "passes": 5040,
+                "fails": 0,
+                "name": "status is 200"
+            }
+        },
+        "name": "",
+        "path": ""
+    }
+}

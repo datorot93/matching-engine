@@ -19,6 +19,7 @@ A high-performance, single-threaded matching engine for a centralized order book
 13. [Configuration](#configuration)
 14. [Prometheus Metrics](#prometheus-metrics)
 15. [Docker](#docker)
+16. [Cloud Deployment](#cloud-deployment)
 
 ---
 
@@ -614,39 +615,60 @@ bash infra/scripts/10-teardown.sh
 
 ```
 infra/
-  k8s/
-    namespace.yaml                          # matching-engine namespace
+  k8s/                                        # Kubernetes manifests (local k3d)
+    namespace.yaml                            # matching-engine namespace
     redpanda/
-      statefulset.yaml                      # Single-node Redpanda
-      service.yaml                          # Headless service
+      statefulset.yaml                        # Single-node Redpanda
+      service.yaml                            # Headless service
     matching-engine/
-      shard-a-deployment.yaml               # ME Shard A (symbols A-D)
+      shard-a-deployment.yaml                 # ME Shard A (symbols A-D)
       shard-a-service.yaml
-      shard-b-deployment.yaml               # ME Shard B (symbols E-H)
+      shard-b-deployment.yaml                 # ME Shard B (symbols E-H)
       shard-b-service.yaml
-      shard-c-deployment.yaml               # ME Shard C (symbols I-L)
+      shard-c-deployment.yaml                 # ME Shard C (symbols I-L)
       shard-c-service.yaml
     edge-gateway/
-      deployment.yaml                       # Symbol-hash routing proxy
+      deployment.yaml                         # Symbol-hash routing proxy
       service.yaml
     monitoring/
-      prometheus-values.yaml                # Helm values: 5s scrape, remote write
-      grafana-values.yaml                   # Helm values: admin/admin, Prometheus DS
-  scripts/
-    00-prerequisites.sh                     # Verify tools
-    01-create-cluster.sh                    # Create k3d cluster
-    02-deploy-observability.sh              # Deploy Prometheus + Grafana
-    03-deploy-redpanda.sh                   # Deploy Redpanda + create topics
-    04-build-images.sh                      # Build JARs + Docker images + import
-    05-deploy-me-single.sh                  # Deploy 1 shard (ASR 1)
-    06-deploy-me-multi.sh                   # Deploy 3 shards + gateway (ASR 2)
-    07-port-forward.sh                      # Port-forwards (single/multi mode)
-    08-run-asr1-tests.sh                    # Orchestrate ASR 1 k6 tests
-    09-run-asr2-tests.sh                    # Orchestrate ASR 2 k6 tests
-    10-teardown.sh                          # Delete cluster
+      prometheus-values.yaml                  # Helm values: 5s scrape, remote write
+      grafana-values.yaml                     # Helm values: admin/admin, Prometheus DS
+  scripts/                                    # Local k3d deployment scripts
+    00-prerequisites.sh                       # Verify tools
+    01-create-cluster.sh                      # Create k3d cluster
+    02-deploy-observability.sh                # Deploy Prometheus + Grafana
+    03-deploy-redpanda.sh                     # Deploy Redpanda + create topics
+    04-build-images.sh                        # Build JARs + Docker images + import
+    05-deploy-me-single.sh                    # Deploy 1 shard (ASR 1)
+    06-deploy-me-multi.sh                     # Deploy 3 shards + gateway (ASR 2)
+    07-port-forward.sh                        # Port-forwards (single/multi mode)
+    08-run-asr1-tests.sh                      # Orchestrate ASR 1 k6 tests
+    09-run-asr2-tests.sh                      # Orchestrate ASR 2 k6 tests
+    10-teardown.sh                            # Delete cluster
     helpers/
-      wait-for-pod.sh                       # Wait for pod readiness
-      pause-redpanda.sh                     # Pause/resume Redpanda (test A4)
+      wait-for-pod.sh                         # Wait for pod readiness
+      pause-redpanda.sh                       # Pause/resume Redpanda (test A4)
+  cloud/                                      # Cloud deployment scripts
+    aws/                                      # AWS (EC2 Graviton3 ARM64)
+      env.sh                                  # Shared config + persist_var()
+      00-prerequisites.sh                     # AWS CLI, AMI lookup, SSH key
+      01-create-network.sh                    # VPC, subnets, IGW, route tables
+      02-create-security-groups.sh            # 6 security groups
+      03-launch-instances.sh                  # 7 EC2 instances + NLB
+      04-setup-software.sh                    # NAT GW, Docker, Prometheus, Grafana
+      05-deploy-me.sh                         # ME containers (single/multi mode)
+      06-run-tests.sh                         # k6 tests + results collection
+      99-teardown.sh                          # Full reverse-order cleanup
+    oci/                                      # Oracle Cloud (Always Free ARM64)
+      env.sh                                  # Shared config + save_state()
+      00-prerequisites.sh                     # OCI CLI, image lookup, SSH key
+      01-create-network.sh                    # VCN, gateways, security lists, subnets
+      02-launch-instances.sh                  # 5 instances (bastion + 4 A1.Flex)
+      03-setup-software.sh                    # Docker, Java 21, k6, rpk via bastion
+      04-deploy-me.sh                         # Build, transfer, deploy containers
+      05-create-load-balancer.sh              # Flexible LB (10 Mbps, Always Free)
+      06-run-tests.sh                         # k6 tests + results collection
+      99-teardown.sh                          # Full reverse-order cleanup
 ```
 
 ### Troubleshooting
@@ -1077,3 +1099,140 @@ docker run -p 8084:8080 -p 9093:9091 \
   -e SHARD_ID=c -e SHARD_SYMBOLS=TEST-ASSET-I,TEST-ASSET-J,TEST-ASSET-K,TEST-ASSET-L \
   matching-engine:experiment-v1
 ```
+
+---
+
+## Cloud Deployment
+
+The project includes deployment automation for running the full experiment on cloud infrastructure. Two providers are supported: **AWS** and **Oracle Cloud (OCI)**. Both deploy the same Docker images and run the same k6 test suite.
+
+### Architecture (Both Providers)
+
+```
+Internet ──► Load Balancer ──► Edge Gateway ──► ME Shard A ─┐
+                                           ├──► ME Shard B  ├──► Redpanda
+                                           └──► ME Shard C ─┘
+                                                                 │
+                                                    Prometheus ──┘
+                                                        │
+                                                    Grafana
+```
+
+All instances run ARM64 (Graviton3 on AWS, Ampere A1 on OCI) with Docker containers. No Kubernetes is used in the cloud deployment — each application runs as a Docker container with `--network host`.
+
+### AWS Deployment
+
+**Instance types:** c7g.medium (Graviton3 ARM64, 1 vCPU, 2 GiB) for ME/Edge/Redpanda, t4g.small for monitoring, c7g.large for the k6 load generator.
+
+**Cost:** ~$0.50-1.00/hour for the full cluster (7 instances + NLB).
+
+**Scripts:** `infra/cloud/aws/`
+
+| Script | Purpose |
+|:---|:---|
+| `env.sh` | Shared configuration (region, CIDRs, instance types, dynamic resource IDs) |
+| `00-prerequisites.sh` | Verify AWS CLI, find ARM64 AMI, create SSH key pair |
+| `01-create-network.sh` | VPC, subnets, Internet Gateway, route tables |
+| `02-create-security-groups.sh` | 6 security groups (NLB, Edge, ME, Redpanda, Monitoring, Load Generator) |
+| `03-launch-instances.sh` | Launch 7 EC2 instances + NLB with target group |
+| `04-setup-software.sh` | NAT Gateway, Docker, Redpanda, Prometheus, Grafana, build and transfer images |
+| `05-deploy-me.sh` | Start ME containers (`single` for ASR 1, `multi` for ASR 2) |
+| `06-run-tests.sh` | Run k6 tests (`smoke`, `asr1`, `asr2`) and collect results |
+| `99-teardown.sh` | Delete all AWS resources in reverse dependency order |
+
+**Quick start:**
+
+```bash
+cd infra/cloud/aws
+
+# 1. Deploy infrastructure
+./00-prerequisites.sh
+./01-create-network.sh
+./02-create-security-groups.sh
+./03-launch-instances.sh --all
+./04-setup-software.sh
+
+# 2. Run ASR 1 (single shard latency)
+./05-deploy-me.sh single
+./06-run-tests.sh smoke
+./06-run-tests.sh asr1
+
+# 3. Run ASR 2 (multi shard scalability)
+./05-deploy-me.sh multi
+./06-run-tests.sh asr2
+
+# 4. Cleanup (deletes everything)
+./99-teardown.sh
+```
+
+### OCI (Oracle Cloud) Deployment
+
+**Instance types:** VM.Standard.A1.Flex (Ampere ARM64, 1 OCPU, 6 GiB each) for ME shards and Edge, VM.Standard.E2.1.Micro for bastion.
+
+**Cost:** $0.00 — the entire experiment runs within the OCI Always Free tier (4 OCPUs, 24 GiB RAM, 200 GB boot storage).
+
+**Network topology:** Bastion host in public subnet for SSH access; all application instances in private subnet. Load Balancer (Always Free, 10 Mbps flexible) provides public HTTP access to the Edge Gateway.
+
+**Scripts:** `infra/cloud/oci/`
+
+| Script | Purpose |
+|:---|:---|
+| `env.sh` | Shared configuration (region, shapes, CIDRs, state file management) |
+| `00-prerequisites.sh` | Verify OCI CLI, resolve ARM64/x86 images, generate SSH keys |
+| `01-create-network.sh` | VCN, gateways, route tables, security lists, subnets |
+| `02-launch-instances.sh` | Launch 5 instances (bastion + 4 A1.Flex) |
+| `03-setup-software.sh` | Install Docker, Java 21, k6, rpk via SSH through bastion |
+| `04-deploy-me.sh` | Build images, transfer via bastion, deploy all containers |
+| `05-create-load-balancer.sh` | Flexible LB with backend set and HTTP listener |
+| `06-run-tests.sh` | Run k6 tests (`smoke`, `asr1`, `asr2`, `all`) and collect results |
+| `99-teardown.sh` | Delete all OCI resources in reverse dependency order |
+
+**Quick start:**
+
+```bash
+cd infra/cloud/oci
+
+# Set your compartment ID
+export COMPARTMENT_ID="ocid1.compartment.oc1..your-compartment-id"
+
+# 1. Deploy infrastructure
+./00-prerequisites.sh
+./01-create-network.sh
+./02-launch-instances.sh
+./03-setup-software.sh
+./04-deploy-me.sh
+
+# 2. Create load balancer (optional, for external access)
+./05-create-load-balancer.sh
+
+# 3. Run tests
+./06-run-tests.sh smoke
+./06-run-tests.sh asr1
+./06-run-tests.sh asr2
+
+# 4. Cleanup (deletes everything)
+./99-teardown.sh
+```
+
+### Cloud vs Local Comparison
+
+| Aspect | Local (k3d) | AWS | OCI |
+|:---|:---|:---|:---|
+| Orchestration | Kubernetes (k3d) | Docker containers | Docker containers |
+| Load balancer | kubectl port-forward | Network Load Balancer | Flexible Load Balancer |
+| Network | k3d internal | VPC (public + private subnets) | VCN (public + private subnets) |
+| Monitoring | Helm (Prometheus + Grafana) | Docker (Prometheus + Grafana) | Docker (Prometheus + Grafana) |
+| Architecture | AMD64 or ARM64 | ARM64 (Graviton3) | ARM64 (Ampere A1) |
+| Cost | Free (local) | ~$0.50-1.00/hr | $0.00 (Always Free) |
+| Setup time | ~5 min | ~15-20 min | ~15-20 min |
+
+### Prerequisites
+
+**AWS:**
+- AWS CLI v2 configured with credentials (`aws configure`)
+- Sufficient EC2 limits (7 instances, 1 NLB)
+
+**OCI:**
+- OCI CLI configured (`oci setup config`)
+- Always Free tier eligible tenancy
+- Compartment OCID

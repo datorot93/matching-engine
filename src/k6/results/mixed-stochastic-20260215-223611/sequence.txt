@@ -1,0 +1,6 @@
+01 normal
+02 aggressive
+03 normal
+04 aggressive
+05 aggressive
+06 normal

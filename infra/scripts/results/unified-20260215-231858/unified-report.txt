@@ -1,0 +1,81 @@
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                     UNIFIED ASR VALIDATION REPORT                                   ║
+║                                     2026-02-15 23:27:55                                                        ║
+╠══════════════════════════════════════════════════════════════════════════════════════════════════════╣
+║  Results Directory: /home/datorot/matching-engine/infra/scripts/results/unified-20260215-231858
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ASR 1: LATENCY REQUIREMENT                                                                         │
+│  Target: p99 matching latency < 200ms, error rate < 1%, success rate > 99%                         │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Status:                UNKNOWN
+
+  Stochastic Test Summary:
+    Total runs:          0
+    Total requests:      0
+
+    Latency (k6 measurements):
+      Avg p50:           0 ms
+      Avg p95:           0 ms
+      Avg p99:           0 ms
+      Max p99:           0 ms   ← Primary criterion
+
+    Error rates:
+      Min success rate:  100 %
+      Max error rate:    0 %
+
+  ME-Internal Metrics (Prometheus):
+    p99 match duration:  N/A ms
+
+  Detailed results: /home/datorot/matching-engine/infra/scripts/results/unified-20260215-231858/asr1/report.txt
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ASR 2: SCALABILITY REQUIREMENT                                                                     │
+│  Target: >= 4,750 matches/min sustained, per-shard p99 < 200ms, linear scaling                     │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Status:                UNKNOWN
+
+  Throughput (Prometheus):
+    Aggregate (3 shards): N/A matches/min   ← Primary criterion
+
+  Per-Shard p99 Latency (Prometheus):
+    Shard A:             N/A ms
+    Shard B:             N/A ms
+    Shard C:             N/A ms
+
+  k6 Test Results:
+    B2 (Peak Sustained): p99 = 0 ms, 0 requests
+    B3 (Ramp):           p99 = 0 ms, 0 requests
+    B4 (Hot Symbol):     p99 = 0 ms, 0 requests
+
+  Detailed results: /home/datorot/matching-engine/infra/scripts/results/unified-20260215-231858/asr2/prometheus-metrics.txt
+
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  OVERALL VALIDATION SUMMARY                                                                         │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  ASR 1 (Latency):      UNKNOWN
+  ASR 2 (Scalability):  UNKNOWN
+
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  OVERALL RESULT:       ✗ FAIL - One or more requirements not met
+  ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  The Matching Engine architecture does not meet all specified requirements.
+  Review the detailed results above to identify root causes and necessary optimizations.
+
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════
+  Additional Resources
+═══════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  Grafana Dashboards:   http://localhost:3000
+  Prometheus:           http://localhost:9090
+  Test Execution Log:   /home/datorot/matching-engine/infra/scripts/results/unified-20260215-231858/test-execution.log
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════

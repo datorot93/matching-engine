@@ -1,0 +1,41 @@
+=========================================
+  RESULTS COLLECTION: asr1
+=========================================
+
+--- ASR 1: Latency Results ---
+
+p99 Matching Latency (per shard):
+ERROR
+
+p95 Matching Latency (per shard):
+ERROR
+
+p50 Matching Latency (per shard):
+ERROR
+
+Total Matches Executed:
+ERROR
+
+GC Pause Rate (last 5 min, ZGC Pauses seconds/sec):
+ERROR
+
+Latency Budget Breakdown (avg seconds):
+  Validation:
+ERROR
+  OrderBook Insertion:
+ERROR
+  Matching Algorithm:
+ERROR
+  WAL Append:
+ERROR
+  Event Publish:
+ERROR
+
+--- Pass/Fail Evaluation ---
+  ASR 1 Primary Criterion: NO DATA (run load test first)
+
+=========================================
+  Check Grafana for detailed visualizations
+  URL: http://localhost:3000
+  Dashboard: Matching Engine Experiment
+=========================================

@@ -29,7 +29,8 @@
       "Bash(bash infra/scripts/07-port-forward.sh multi)",
       "Bash(bash infra/scripts/09-run-asr2-tests.sh)",
       "Bash(bash infra/scripts/collect-results.sh:*)",
-      "Bash(chmod +x /home/datorot/matching-engine/infra/cloud/aws/*.sh /home/datorot/matching-engine/infra/cloud/oci/*.sh)"
+      "Bash(chmod +x /home/datorot/matching-engine/infra/cloud/aws/*.sh /home/datorot/matching-engine/infra/cloud/oci/*.sh)",
+      "Bash(ls:*)"
     ]
   }
 }

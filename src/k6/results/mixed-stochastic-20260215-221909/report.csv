@@ -1,0 +1,7 @@
+run_number,run_type,total_requests,buy_orders,sell_orders,p50_latency_ms,p95_latency_ms,p99_latency_ms,avg_latency_ms,error_rate_pct,success_rate_pct,http_reqs_per_sec
+1,normal,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00
+2,aggressive,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00
+3,aggressive,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00
+4,normal,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00
+5,normal,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00
+6,aggressive,0,0,0,0.00,0.00,0.00,0.00,0,0,0.00

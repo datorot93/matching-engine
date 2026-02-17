@@ -1,0 +1,235 @@
+{
+    "setup_data": {
+        "initialPrices": {
+            "TEST-ASSET-A": 15000,
+            "TEST-ASSET-B": 15000,
+            "TEST-ASSET-C": 15000,
+            "TEST-ASSET-D": 15000
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "seed shard a status is 200": {
+                            "path": "::setup::seed shard a status is 200",
+                            "id": "c91a68fe615f4172986f965dea3190ae",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "seed shard a status is 200"
+                        },
+                        "seed BUY TEST-ASSET-A status 200": {
+                            "name": "seed BUY TEST-ASSET-A status 200",
+                            "path": "::setup::seed BUY TEST-ASSET-A status 200",
+                            "id": "061c1a13cd84ee106d4be6a5e2ba1590",
+                            "passes": 1,
+                            "fails": 0
+                        },
+                        "seed BUY TEST-ASSET-B status 200": {
+                            "id": "2b28a0cdae2125dae7ec8f0b8f646bdd",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "seed BUY TEST-ASSET-B status 200",
+                            "path": "::setup::seed BUY TEST-ASSET-B status 200"
+                        },
+                        "seed BUY TEST-ASSET-C status 200": {
+                            "id": "482e794e78bd5659ce65484f50a11fdd",
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "seed BUY TEST-ASSET-C status 200",
+                            "path": "::setup::seed BUY TEST-ASSET-C status 200"
+                        },
+                        "seed BUY TEST-ASSET-D status 200": {
+                            "fails": 0,
+                            "name": "seed BUY TEST-ASSET-D status 200",
+                            "path": "::setup::seed BUY TEST-ASSET-D status 200",
+                            "id": "41d4b61880e8ac5d15f05d2e2804f066",
+                            "passes": 1
+                        }
+                    }
+            }
+        },
+        "checks": {
+            "status is 200": {
+                "name": "status is 200",
+                "path": "::status is 200",
+                "id": "6210a8cd14cd70477eba5c5e4cb3fb5f",
+                "passes": 1352,
+                "fails": 0
+            },
+            "latency < 200ms": {
+                "name": "latency < 200ms",
+                "path": "::latency < 200ms",
+                "id": "d5d972e45ae02eeb06b87a71939ff40c",
+                "passes": 1352,
+                "fails": 0
+            }
+        }
+    },
+    "metrics": {
+        "http_req_duration{expected_response:true}": {
+            "p(95)": 12.994218,
+            "avg": 8.894925447310243,
+            "min": 5.465718,
+            "med": 7.385124,
+            "max": 157.914752,
+            "p(90)": 10.101339800000002
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 10
+        },
+        "buy_order_count": {
+            "count": 499,
+            "rate": 7.880921528977385
+        },
+        "http_req_sending": {
+            "avg": 0.077124952100221,
+            "min": 0.00988,
+            "med": 0.052068,
+            "max": 28.97699,
+            "p(90)": 0.07280100000000002,
+            "p(95)": 0.08627280000000001
+        },
+        "http_req_blocked": {
+            "avg": 0.08541789388356673,
+            "min": 0.003073,
+            "med": 0.007293,
+            "max": 15.063604,
+            "p(90)": 0.011295600000000005,
+            "p(95)": 0.013988400000000003
+        },
+        "http_req_duration": {
+            "avg": 8.894925447310243,
+            "min": 5.465718,
+            "med": 7.385124,
+            "max": 157.914752,
+            "p(90)": 10.101339800000002,
+            "p(95)": 12.994218,
+            "thresholds": {
+                "p(99)<200": false
+            }
+        },
+        "http_req_connecting": {
+            "min": 0,
+            "med": 0,
+            "max": 14.949112,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.0759645283714075
+        },
+        "total_order_count": {
+            "count": 1352,
+            "rate": 21.352717248852557
+        },
+        "order_success_rate": {
+            "fails": 0,
+            "passes": 1352,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_req_receiving": {
+            "max": 43.731001,
+            "p(90)": 0.37155540000000015,
+            "p(95)": 0.5122194000000005,
+            "avg": 1.0572465991156959,
+            "min": 0.023921,
+            "med": 0.252566
+        },
+        "data_sent": {
+            "count": 816057,
+            "rate": 12888.33903842224
+        },
+        "data_received": {
+            "count": 266844,
+            "rate": 4214.382012982848
+        },
+        "buy_order_rate": {
+            "passes": 499,
+            "fails": 853,
+            "value": 0.3690828402366864
+        },
+        "checks": {
+            "passes": 2709,
+            "fails": 0,
+            "value": 1
+        },
+        "sell_order_rate": {
+            "passes": 853,
+            "fails": 499,
+            "value": 0.6309171597633136
+        },
+        "sell_order_count": {
+            "count": 853,
+            "rate": 13.47179571987517
+        },
+        "iteration_duration": {
+            "max": 1051.30972,
+            "p(90)": 1007.8330447,
+            "p(95)": 1008.6069353,
+            "avg": 411.08532455547225,
+            "min": 16.769937,
+            "med": 313.958565
+        },
+        "vus_max": {
+            "min": 10,
+            "max": 10,
+            "value": 10
+        },
+        "http_reqs": {
+            "count": 1357,
+            "rate": 21.431684398441508
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0
+        },
+        "iterations": {
+            "count": 1352,
+            "rate": 21.352717248852557
+        },
+        "matching_latency": {
+            "p(95)": 12.7103496,
+            "avg": 8.64781730325443,
+            "min": 5.465718,
+            "med": 7.3805175,
+            "max": 50.526154,
+            "p(90)": 10.000887300000002,
+            "thresholds": {
+                "p(99)<200": false,
+                "p(95)<150": false,
+                "p(50)<100": false
+            }
+        },
+        "http_req_waiting": {
+            "p(95)": 11.3201502,
+            "avg": 7.760553896094327,
+            "min": 5.104222,
+            "med": 7.082528,
+            "max": 128.710072,
+            "p(90)": 9.250128
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 1357,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        }
+    }
+}

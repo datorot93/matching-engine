@@ -9,8 +9,10 @@
 // The port defaults to 8081 because 8080 is occupied by Airflow on this machine.
 // Override via: k6 run -e ME_SHARD_A_URL=http://localhost:8081 ...
 // ---------------------------------------------------------------------------
-export const GATEWAY_URL    = __ENV.GATEWAY_URL    || 'http://localhost:8081';
-export const ME_SHARD_A_URL = __ENV.ME_SHARD_A_URL || 'http://localhost:8081';
+export const GATEWAY_URL    = __ENV.GATEWAY_URL    || 'http://149.130.191.100';
+export const ME_SHARD_A_URL = __ENV.ME_SHARD_A_URL || 'http://149.130.191.100';
+// export const GATEWAY_URL    = __ENV.GATEWAY_URL    || 'http://localhost:8081';
+// export const ME_SHARD_A_URL = __ENV.ME_SHARD_A_URL || 'http://localhost:8081';
 
 // ---------------------------------------------------------------------------
 // Symbols assigned to each shard (must match ME SHARD_SYMBOLS env config)

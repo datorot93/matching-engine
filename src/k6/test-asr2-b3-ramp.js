@@ -36,15 +36,15 @@ export const options = {
     scenarios: {
         ramp: {
             executor:        'ramping-arrival-rate',
-            startRate:       17,           // Start at ~1,000/min
+            startRate:       50,           // Start at ~1,000/min
             timeUnit:        '1s',
             preAllocatedVUs: 150,
             maxVUs:          300,
             stages: [
-                { duration: '2m', target: 17 },    // t=0-2m:   hold at ~1,000/min
-                { duration: '2m', target: 42 },    // t=2-4m:   ramp to ~2,500/min
-                { duration: '2m', target: 84 },    // t=4-6m:   ramp to ~5,000/min
-                { duration: '4m', target: 84 },    // t=6-10m:  sustain at ~5,000/min
+                { duration: '1m', target: 17 },    // t=0-2m:   hold at ~1,000/min
+                { duration: '1m', target: 42 },    // t=2-4m:   ramp to ~2,500/min
+                { duration: '1m', target: 100 },    // t=4-6m:   ramp to ~5,000/min
+                { duration: '2m', target: 100 },    // t=6-10m:  sustain at ~5,000/min
             ],
         },
     },

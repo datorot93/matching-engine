@@ -1,0 +1,26 @@
+=========================================
+  RESULTS COLLECTION: asr2
+=========================================
+
+--- ASR 2: Scalability Results ---
+
+Aggregate Throughput (matches/min, last 5m average):
+ERROR
+
+Per-Shard Throughput (matches/min):
+ERROR
+
+Per-Shard p99 Latency:
+ERROR
+
+JVM Heap Usage (per shard):
+ERROR
+
+--- Pass/Fail Evaluation ---
+  ASR 2 Throughput Criterion: NO DATA (run load test first)
+
+=========================================
+  Check Grafana for detailed visualizations
+  URL: http://localhost:3000
+  Dashboard: Matching Engine Experiment
+=========================================

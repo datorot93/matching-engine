@@ -40,9 +40,9 @@ export const options = {
     scenarios: {
         hot_symbol: {
             executor:        'constant-arrival-rate',
-            rate:            84,           // ~84 orders/sec = ~5,040/min total
+            rate:            150,
             timeUnit:        '1s',
-            duration:        '5m',
+            duration:        '1m',
             preAllocatedVUs: 100,
             maxVUs:          200,
         },
@@ -62,8 +62,8 @@ export function setup() {
     console.log('Seeding shards (extra depth on Shard A for hot symbol)...');
 
     // Extra depth on Shard A to support 80% traffic volume
-    seedShard('a', SHARD_A_SYMBOLS, 2000, 100, GATEWAY_URL);
-    seedShard('b', SHARD_B_SYMBOLS, 500, 50, GATEWAY_URL);
+    seedShard('a', SHARD_A_SYMBOLS, 500, 50, GATEWAY_URL);
+    seedShard('b', SHARD_B_SYMBOLS, 2000, 100, GATEWAY_URL);
     seedShard('c', SHARD_C_SYMBOLS, 500, 50, GATEWAY_URL);
 
     console.log('All shards seeded. Starting hot symbol test...');
