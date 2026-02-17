@@ -1,0 +1,520 @@
+<mxfile host="app.diagrams.net" modified="2026-02-16T00:00:00.000Z" agent="Claude" version="22.1.16" type="device">
+  <diagram id="class-diagram-me" name="Matching Engine — Class Diagram">
+    <mxGraphModel dx="2000" dy="1200" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="2200" math="0" shadow="1">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- TITLE                                                               -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="title" value="«classDiagram»    Matching Engine + Edge Gateway — UML 2.5 Class Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="10" width="900" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.domain (enums + value objects)         -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-domain-enums" value="com.matchingengine.domain" style="swimlane;startSize=22;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="820" height="240" as="geometry" />
+        </mxCell>
+
+        <!-- «enumeration» Side -->
+        <mxCell id="cls-side" value="«enumeration»&#xa;Side" style="swimlane;startSize=36;fontStyle=1;align=center;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-domain-enums">
+          <mxGeometry x="10" y="30" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-side-vals" value="BUY&#xa;SELL" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-side">
+          <mxGeometry x="0" y="36" width="140" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- «enumeration» OrderType -->
+        <mxCell id="cls-ordertype" value="«enumeration»&#xa;OrderType" style="swimlane;startSize=36;fontStyle=1;align=center;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-domain-enums">
+          <mxGeometry x="160" y="30" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-ordertype-vals" value="LIMIT&#xa;MARKET" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-ordertype">
+          <mxGeometry x="0" y="36" width="140" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- «enumeration» OrderStatus -->
+        <mxCell id="cls-orderstatus" value="«enumeration»&#xa;OrderStatus" style="swimlane;startSize=36;fontStyle=1;align=center;fillColor=#f0e6ff;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-domain-enums">
+          <mxGeometry x="310" y="30" width="160" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderstatus-vals" value="NEW&#xa;PARTIALLY_FILLED&#xa;FILLED&#xa;CANCELLED&#xa;REJECTED" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderstatus">
+          <mxGeometry x="0" y="36" width="160" height="104" as="geometry" />
+        </mxCell>
+
+        <!-- «valueObject» OrderId -->
+        <mxCell id="cls-orderid" value="«valueObject»&#xa;OrderId" style="swimlane;startSize=36;fontStyle=1;align=center;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-domain-enums">
+          <mxGeometry x="490" y="30" width="150" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderid-body" value="─────────────&#xa;- value: String&#xa;─────────────&#xa;+ value(): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderid">
+          <mxGeometry x="0" y="36" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- «valueObject» Price -->
+        <mxCell id="cls-price" value="«valueObject»&#xa;Price" style="swimlane;startSize=36;fontStyle=1;align=center;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-domain-enums">
+          <mxGeometry x="655" y="30" width="155" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-price-body" value="─────────────&#xa;- cents: long&#xa;─────────────&#xa;+ cents(): long&#xa;+ compareTo(Price): int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-price">
+          <mxGeometry x="0" y="36" width="155" height="76" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.domain (core entities)                 -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-domain-core" value="com.matchingengine.domain — Core Entities" style="swimlane;startSize=22;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="320" width="1260" height="320" as="geometry" />
+        </mxCell>
+
+        <!-- Order -->
+        <mxCell id="cls-order" value="Order" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="10" y="30" width="240" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-order-body" value="─────────────────────&#xa;- id: OrderId&#xa;- symbol: String&#xa;- side: Side&#xa;- type: OrderType&#xa;- limitPrice: Price&#xa;- originalQuantity: long&#xa;- remainingQuantity: long&#xa;- filledQuantity: long&#xa;- timestamp: long&#xa;- status: OrderStatus&#xa;─────────────────────&#xa;+ fill(qty: long): void&#xa;+ isFilled(): boolean&#xa;+ isActive(): boolean&#xa;+ getId(): OrderId&#xa;+ getSide(): Side&#xa;+ getLimitPrice(): Price&#xa;+ getStatus(): OrderStatus&#xa;+ setStatus(s: OrderStatus): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-order">
+          <mxGeometry x="0" y="28" width="240" height="232" as="geometry" />
+        </mxCell>
+
+        <!-- PriceLevel -->
+        <mxCell id="cls-pricelevel" value="PriceLevel" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="265" y="30" width="230" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-pricelevel-body" value="─────────────────────&#xa;- price: Price&#xa;- orders: ArrayDeque&lt;Order&gt;&#xa;- totalQuantity: long&#xa;─────────────────────&#xa;+ addOrder(o: Order): void&#xa;+ peekFirst(): Order&#xa;+ pollFirst(): Order&#xa;+ removeOrder(o: Order): void&#xa;+ isEmpty(): boolean&#xa;+ getTotalQuantity(): long&#xa;+ getOrderCount(): int&#xa;+ getPrice(): Price&#xa;+ recalculateTotalQuantity(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-pricelevel">
+          <mxGeometry x="0" y="28" width="230" height="194" as="geometry" />
+        </mxCell>
+
+        <!-- OrderBook -->
+        <mxCell id="cls-orderbook" value="OrderBook" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="510" y="30" width="250" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderbook-body" value="─────────────────────&#xa;- symbol: String&#xa;- bids: TreeMap&lt;Price, PriceLevel&gt;&#xa;  (reverseOrder — highest bid first)&#xa;- asks: TreeMap&lt;Price, PriceLevel&gt;&#xa;  (natural order — lowest ask first)&#xa;- orderIndex: HashMap&lt;String, Order&gt;&#xa;─────────────────────&#xa;+ addOrder(o: Order): void&#xa;+ removeOrder(id: String): void&#xa;+ getBestBid(): PriceLevel&#xa;+ getBestAsk(): PriceLevel&#xa;+ getBidDepth(): int&#xa;+ getAskDepth(): int&#xa;+ getBidLevelCount(): int&#xa;+ getAskLevelCount(): int&#xa;+ getBids(): TreeMap&#xa;+ getAsks(): TreeMap&#xa;+ getOrderIndex(): HashMap" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderbook">
+          <mxGeometry x="0" y="28" width="250" height="234" as="geometry" />
+        </mxCell>
+
+        <!-- OrderBookManager -->
+        <mxCell id="cls-obbmanager" value="OrderBookManager" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="775" y="30" width="230" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-obbmanager-body" value="─────────────────────&#xa;- books: HashMap&lt;String, OrderBook&gt;&#xa;─────────────────────&#xa;+ getOrCreateBook(sym: String): OrderBook&#xa;+ getBook(sym: String): OrderBook&#xa;+ getAllBooks(): Collection&lt;OrderBook&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-obbmanager">
+          <mxGeometry x="0" y="28" width="230" height="124" as="geometry" />
+        </mxCell>
+
+        <!-- MatchResult -->
+        <mxCell id="cls-matchresult" value="MatchResult" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="775" y="200" width="230" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-matchresult-body" value="─────────────────────&#xa;- matchId: String&#xa;- takerOrderId: String&#xa;- makerOrderId: String&#xa;- symbol: String&#xa;- executionPrice: long (cents)&#xa;- executionQuantity: long&#xa;- timestamp: long&#xa;- takerSide: Side" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-matchresult">
+          <mxGeometry x="0" y="28" width="230" height="78" as="geometry" />
+        </mxCell>
+
+        <!-- MatchResultSet -->
+        <mxCell id="cls-matchresultset" value="MatchResultSet" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="pkg-domain-core">
+          <mxGeometry x="1020" y="30" width="225" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-matchresultset-body" value="─────────────────────&#xa;- results: List&lt;MatchResult&gt;&#xa;- totalFilledQuantity: long&#xa;- incomingFullyFilled: boolean&#xa;─────────────────────&#xa;+ getResults(): List&lt;MatchResult&gt;&#xa;+ getTotalFilledQuantity(): long&#xa;+ isIncomingFullyFilled(): boolean&#xa;+ getMatchCount(): int&#xa;+ hasMatches(): boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-matchresultset">
+          <mxGeometry x="0" y="28" width="225" height="164" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.matching                               -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-matching" value="com.matchingengine.matching" style="swimlane;startSize=22;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="660" width="570" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- MatchingAlgorithm interface -->
+        <mxCell id="cls-matchalg" value="«interface»&#xa;MatchingAlgorithm" style="swimlane;startSize=36;fontStyle=3;align=center;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="pkg-matching">
+          <mxGeometry x="10" y="30" width="250" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-matchalg-body" value="─────────────────────&#xa;+ match(book: OrderBook,&#xa;        incoming: Order): MatchResultSet" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-matchalg">
+          <mxGeometry x="0" y="36" width="250" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- PriceTimePriorityMatcher -->
+        <mxCell id="cls-matcher" value="PriceTimePriorityMatcher" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="pkg-matching">
+          <mxGeometry x="280" y="30" width="275" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-matcher-body" value="«implements MatchingAlgorithm»&#xa;─────────────────────&#xa;- matchSequence: AtomicLong&#xa;─────────────────────&#xa;+ match(book: OrderBook,&#xa;        incoming: Order): MatchResultSet&#xa;  O(log P + F) — price + time priority&#xa;- generateMatchId(): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-matcher">
+          <mxGeometry x="0" y="28" width="275" height="122" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.disruptor                              -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-disruptor" value="com.matchingengine.disruptor  (LMAX Disruptor Pipeline)" style="swimlane;startSize=22;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="880" width="1260" height="290" as="geometry" />
+        </mxCell>
+
+        <!-- OrderEvent -->
+        <mxCell id="cls-orderevent" value="OrderEvent" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="pkg-disruptor">
+          <mxGeometry x="10" y="30" width="260" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderevent-body" value="«pre-allocated ring buffer slot»&#xa;─────────────────────&#xa;+ receivedNanos: long&#xa;+ orderId: String&#xa;+ symbol: String&#xa;+ side: Side&#xa;+ orderType: OrderType&#xa;+ price: long (cents)&#xa;+ quantity: long&#xa;+ timestamp: long (epoch ms)&#xa;─────────────────────&#xa;+ clear(): void&#xa;  Resets all fields to null/0&#xa;  (prevents stale slot data)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderevent">
+          <mxGeometry x="0" y="28" width="260" height="204" as="geometry" />
+        </mxCell>
+
+        <!-- OrderEventFactory -->
+        <mxCell id="cls-oeventfactory" value="OrderEventFactory" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="pkg-disruptor">
+          <mxGeometry x="285" y="30" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-oeventfactory-body" value="«implements EventFactory&lt;OrderEvent&gt;»&#xa;─────────────────────&#xa;+ newInstance(): OrderEvent&#xa;  Called once per ring buffer slot&#xa;  at Disruptor initialization" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-oeventfactory">
+          <mxGeometry x="0" y="28" width="220" height="74" as="geometry" />
+        </mxCell>
+
+        <!-- OrderEventTranslator -->
+        <mxCell id="cls-oeventtrans" value="OrderEventTranslator" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="pkg-disruptor">
+          <mxGeometry x="285" y="155" width="220" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-oeventtrans-body" value="«implements EventTranslatorVararg»&#xa;─────────────────────&#xa;+ translateTo(event: OrderEvent,&#xa;  seq: long, args: Object[]): void&#xa;  Copies HTTP-parsed data&#xa;  into pre-allocated slot" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-oeventtrans">
+          <mxGeometry x="0" y="28" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- OrderEventHandler -->
+        <mxCell id="cls-oeventhandler" value="OrderEventHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="pkg-disruptor">
+          <mxGeometry x="520" y="30" width="725" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-oeventhandler-body" value="«implements EventHandler&lt;OrderEvent&gt;»&#xa;«SINGLE THREAD — no locks, no blocking I/O»&#xa;─────────────────────────────────────────&#xa;- bookManager: OrderBookManager&#xa;- matcher: PriceTimePriorityMatcher&#xa;- wal: WriteAheadLog&#xa;- publisher: EventPublisher&#xa;- metrics: MetricsRegistry&#xa;- config: ShardConfig&#xa;- ringBufferSize: long&#xa;- stats: MatchingStats&#xa;- detailedLogging: boolean&#xa;─────────────────────────────────────────&#xa;+ onEvent(event: OrderEvent, seq: long, endOfBatch: boolean): void&#xa;  Pipeline: 1.validate → 2.createOrder → 3.insertBook&#xa;            → 4.match → 5.walAppend → 6.kafkaPublish&#xa;            → 7.recordMetrics → 8.flushWAL(endOfBatch)&#xa;- appendToWal(event, results): void&#xa;- updateOrderBookGauges(shardId): void&#xa;- nanosToSeconds(nanos: long): double" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-oeventhandler">
+          <mxGeometry x="0" y="28" width="725" height="214" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.http                                   -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-http-me" value="com.matchingengine.http  (HttpHandler implementations)" style="swimlane;startSize=22;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="1190" width="950" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- OrderHttpHandler -->
+        <mxCell id="cls-orderhandler" value="OrderHttpHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-http-me">
+          <mxGeometry x="10" y="30" width="310" height="175" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderhandler-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;- ringBuffer: RingBuffer&lt;OrderEvent&gt;&#xa;- config: ShardConfig&#xa;- metrics: MetricsRegistry&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  Parse JSON → publish to ring buffer&#xa;  Returns 200 ACCEPTED immediately&#xa;  (fire-and-publish pattern)&#xa;  Rejects: unknown symbol, invalid JSON,&#xa;  wrong method, ring buffer full (503)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderhandler">
+          <mxGeometry x="0" y="28" width="310" height="139" as="geometry" />
+        </mxCell>
+
+        <!-- HealthHttpHandler -->
+        <mxCell id="cls-healthhandler" value="HealthHttpHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-http-me">
+          <mxGeometry x="330" y="30" width="280" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-healthhandler-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;- shardId: String&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  GET /health → 200&#xa;  {&quot;status&quot;:&quot;UP&quot;,&quot;shardId&quot;:&quot;a&quot;}" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-healthhandler">
+          <mxGeometry x="0" y="28" width="280" height="94" as="geometry" />
+        </mxCell>
+
+        <!-- SeedHttpHandler -->
+        <mxCell id="cls-seedhandler" value="SeedHttpHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-http-me">
+          <mxGeometry x="620" y="30" width="310" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-seedhandler-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;- bookManager: OrderBookManager&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  POST /seed → directly inserts into OrderBook&#xa;  Bypasses ring buffer and matching&#xa;  Returns {&quot;seeded&quot;: N}&#xa;  For test setup only" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="pkg-http-me">
+          <mxGeometry x="0" y="28" width="310" height="109" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: Infrastructure (wal, publishing, metrics, config, logging) -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-infra" value="com.matchingengine  (config · wal · publishing · metrics · logging)" style="swimlane;startSize=22;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="20" y="1430" width="1260" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- ShardConfig -->
+        <mxCell id="cls-shardconfig" value="ShardConfig" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="10" y="30" width="230" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-shardconfig-body" value="─────────────────────&#xa;- shardId: String&#xa;- symbols: List&lt;String&gt;&#xa;- httpPort: int&#xa;- metricsPort: int&#xa;- kafkaBootstrap: String&#xa;- walPath: String&#xa;- walSizeMb: int&#xa;- ringBufferSize: int&#xa;─────────────────────&#xa;+ fromEnv(): ShardConfig {static}&#xa;+ getShardId(): String&#xa;+ getSymbols(): List&lt;String&gt;&#xa;+ getHttpPort(): int&#xa;+ getMetricsPort(): int&#xa;+ getKafkaBootstrap(): String&#xa;+ getWalPath(): String&#xa;+ getRingBufferSize(): int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-shardconfig">
+          <mxGeometry x="0" y="28" width="230" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- WriteAheadLog -->
+        <mxCell id="cls-wal" value="WriteAheadLog" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="255" y="30" width="250" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-wal-body" value="«memory-mapped file, append-only»&#xa;─────────────────────&#xa;- buffer: MappedByteBuffer&#xa;- raf: RandomAccessFile&#xa;- capacity: int (bytes)&#xa;- position: int&#xa;- full: boolean&#xa;─────────────────────&#xa;+ WriteAheadLog(path: String,&#xa;                sizeMb: int)&#xa;+ append(data: byte[]): void&#xa;  Format: [4B length][data bytes]&#xa;+ flush(): void&#xa;  MappedByteBuffer.force()&#xa;  Deferred to endOfBatch&#xa;+ close(): void&#xa;+ getPosition(): int&#xa;+ isFull(): boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-wal">
+          <mxGeometry x="0" y="28" width="250" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- EventPublisher -->
+        <mxCell id="cls-eventpub" value="EventPublisher" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="520" y="30" width="250" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-eventpub-body" value="«async Kafka producer, acks=0»&#xa;─────────────────────&#xa;- producer: KafkaProducer&#xa;- ORDERS_TOPIC: String&#xa;- MATCHES_TOPIC: String&#xa;─────────────────────&#xa;+ EventPublisher(bootstrap: String)&#xa;+ publishOrderPlaced(o: Order): void&#xa;  Async, fire-and-forget&#xa;  max.block.ms=1 (never blocks)&#xa;+ publishMatch(r: MatchResult): void&#xa;  Async, fire-and-forget&#xa;+ close(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-eventpub">
+          <mxGeometry x="0" y="28" width="250" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- MetricsRegistry -->
+        <mxCell id="cls-metrics" value="MetricsRegistry" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="785" y="30" width="260" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-metrics-body" value="«Prometheus metrics registry»&#xa;─────────────────────&#xa;+ matchDuration: Histogram&#xa;+ orderValidationDuration: Histogram&#xa;+ orderbookInsertionDuration: Histogram&#xa;+ matchingAlgorithmDuration: Histogram&#xa;+ walAppendDuration: Histogram&#xa;+ eventPublishDuration: Histogram&#xa;+ matchesTotal: Counter&#xa;+ ordersReceivedTotal: Counter&#xa;+ orderbookDepth: Gauge&#xa;+ orderbookPriceLevels: Gauge&#xa;+ ringbufferUtilization: Gauge&#xa;─────────────────────&#xa;+ MetricsRegistry(shardId: String)&#xa;+ startHttpServer(port: int): void&#xa;+ close(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-metrics">
+          <mxGeometry x="0" y="28" width="260" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- MatchingStats -->
+        <mxCell id="cls-matchstats" value="MatchingStats" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="1060" y="30" width="185" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-matchstats-body" value="«thread-safe atomic counters»&#xa;─────────────────────&#xa;+ ordersRejected: AtomicLong&#xa;+ buyOrdersReceived: AtomicLong&#xa;+ sellOrdersReceived: AtomicLong&#xa;+ matchesExecuted: AtomicLong" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-matchstats">
+          <mxGeometry x="0" y="28" width="185" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- PeriodicStatsLogger -->
+        <mxCell id="cls-statslogger" value="PeriodicStatsLogger" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-infra">
+          <mxGeometry x="1060" y="185" width="185" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-statslogger-body" value="─────────────────────&#xa;- stats: MatchingStats&#xa;- bookManager: OrderBookManager&#xa;─────────────────────&#xa;+ start(): void&#xa;+ stop(): void&#xa;+ logShutdownSummary(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-statslogger">
+          <mxGeometry x="0" y="28" width="185" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- MatchingEngineApp (Application Root)                               -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="cls-meapp" value="MatchingEngineApp" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#1e3a5f;strokeColor=#1e3a5f;fontSize=13;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="660" width="300" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-meapp-body" value="«Application entry point»&#xa;─────────────────────&#xa;+ main(args: String[]): void {static}&#xa;  1. ShardConfig.fromEnv()&#xa;  2. new MetricsRegistry()&#xa;  3. new WriteAheadLog()&#xa;  4. new EventPublisher()&#xa;  5. new OrderBookManager()&#xa;  6. new PriceTimePriorityMatcher()&#xa;  7. new Disruptor&lt;OrderEvent&gt;()&#xa;  8. disruptor.handleEventsWith(handler)&#xa;  9. disruptor.start()&#xa; 10. HttpServer.create() + register handlers&#xa; 11. Runtime.addShutdownHook()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;fontColor=#ffffff;" vertex="1" parent="cls-meapp">
+          <mxGeometry x="0" y="28" width="300" height="164" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR — EDGE GATEWAY SECTION                                   -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="sep-line" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#b85450;strokeWidth=3;" edge="1" parent="1">
+          <mxGeometry x="1300" y="50" width="10" height="10" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1300" y="50" /><mxPoint x="1300" y="1700" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sep-label" value="─── EDGE GATEWAY ───" style="text;html=1;strokeColor=none;fillColor=#b85450;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=14;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="80" width="200" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- EdgeGatewayApp                                                      -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="cls-gwapp" value="EdgeGatewayApp" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#82b366;strokeColor=#82b366;fontSize=13;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="140" width="300" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwapp-body" value="«Application entry point»&#xa;─────────────────────&#xa;+ main(args: String[]): void {static}&#xa;  1. GatewayConfig.fromEnv()&#xa;  2. new GatewayMetrics()&#xa;  3. new ConsistentHashRouter(config)&#xa;  4. HttpClient.newBuilder().build()&#xa;  5. HttpServer.create()&#xa;  6. register: OrderProxyHandler&#xa;               SeedProxyHandler&#xa;               HealthHandler&#xa;  7. httpServer.start()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;fontColor=#ffffff;" vertex="1" parent="cls-gwapp">
+          <mxGeometry x="0" y="28" width="300" height="129" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.gateway.config                          -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-gw-config" value="com.matchingengine.gateway.config" style="swimlane;startSize=22;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="330" width="340" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwconfig" value="GatewayConfig" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="pkg-gw-config">
+          <mxGeometry x="10" y="30" width="310" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwconfig-body" value="─────────────────────&#xa;- httpPort: int&#xa;- metricsPort: int&#xa;- shardMap: Map&lt;String,String&gt;&#xa;  (shardId → base URL)&#xa;- shardSymbols: Map&lt;String,List&lt;String&gt;&gt;&#xa;  (shardId → symbols list)&#xa;─────────────────────&#xa;+ fromEnv(): GatewayConfig {static}&#xa;+ getShardMap(): Map&#xa;+ getShardSymbols(): Map&#xa;+ getHttpPort(): int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-gwconfig">
+          <mxGeometry x="0" y="28" width="310" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.gateway.routing                         -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-gw-routing" value="com.matchingengine.gateway.routing" style="swimlane;startSize=22;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="555" width="680" height="290" as="geometry" />
+        </mxCell>
+
+        <!-- SymbolRouter interface -->
+        <mxCell id="cls-symbolrouter" value="«interface»&#xa;SymbolRouter" style="swimlane;startSize=36;fontStyle=3;align=center;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="pkg-gw-routing">
+          <mxGeometry x="10" y="30" width="280" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-symbolrouter-body" value="─────────────────────&#xa;+ getShardUrl(symbol: String): String&#xa;  Returns base URL for ME shard&#xa;  Throws IllegalArgumentException&#xa;  if symbol unknown&#xa;+ getShardId(symbol: String): String&#xa;  Returns shard ID (e.g. &quot;a&quot;)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-symbolrouter">
+          <mxGeometry x="0" y="36" width="280" height="95" as="geometry" />
+        </mxCell>
+
+        <!-- ConsistentHashRouter -->
+        <mxCell id="cls-chrouter" value="ConsistentHashRouter" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="pkg-gw-routing">
+          <mxGeometry x="310" y="30" width="355" height="245" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-chrouter-body" value="«implements SymbolRouter»&#xa;«lookup table (despite name)»&#xa;─────────────────────&#xa;- symbolToShardId: Map&lt;String,String&gt;&#xa;  (unmodifiable, built at construction)&#xa;- shardIdToUrl: Map&lt;String,String&gt;&#xa;  (unmodifiable, built at construction)&#xa;─────────────────────&#xa;+ ConsistentHashRouter(&#xa;    shardSymbols: Map&lt;String,List&lt;String&gt;&gt;,&#xa;    shardMap: Map&lt;String,String&gt;)&#xa;+ getShardUrl(symbol: String): String&#xa;  O(1) lookup&#xa;+ getShardId(symbol: String): String&#xa;  O(1) lookup&#xa;+ getSymbolToShardId(): Map&#xa;+ getShardIdToUrl(): Map" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-chrouter">
+          <mxGeometry x="0" y="28" width="355" height="210" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.gateway.http                            -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-gw-http" value="com.matchingengine.gateway.http  (HttpHandler implementations)" style="swimlane;startSize=22;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="870" width="1020" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- OrderProxyHandler -->
+        <mxCell id="cls-orderproxy" value="OrderProxyHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-gw-http">
+          <mxGeometry x="10" y="30" width="350" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-orderproxy-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;- router: SymbolRouter&#xa;- httpClient: HttpClient (Java 11)&#xa;- metrics: GatewayMetrics&#xa;- REQUEST_TIMEOUT: Duration = 5s&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  POST /orders flow:&#xa;  1. readAllBytes() → requestBody&#xa;  2. JsonParser → extract symbol&#xa;  3. router.getShardUrl(symbol)&#xa;  4. HttpRequest → shardUrl/orders&#xa;  5. httpClient.send() → pass-through&#xa;  6. metrics.recordRequest()&#xa;  Errors: 400, 502, 504&#xa;- sendErrorResponse(ex,code,msg): void&#xa;- categorizeStatus(code): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-orderproxy">
+          <mxGeometry x="0" y="28" width="350" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- SeedProxyHandler -->
+        <mxCell id="cls-seedproxy" value="SeedProxyHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-gw-http">
+          <mxGeometry x="375" y="30" width="310" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-seedproxy-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;- shardMap: Map&lt;String,String&gt;&#xa;  (shardId → base URL)&#xa;- httpClient: HttpClient&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  POST /seed/{shardId} flow:&#xa;  1. Extract shardId from path&#xa;  2. Lookup URL in shardMap&#xa;  3. Forward to shardUrl/seed&#xa;  4. Pass-through response&#xa;  Errors: 400 (unknown shard),&#xa;          502/504 (shard error)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-seedproxy">
+          <mxGeometry x="0" y="28" width="310" height="165" as="geometry" />
+        </mxCell>
+
+        <!-- HealthHandler -->
+        <mxCell id="cls-gwhealth" value="HealthHandler" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="pkg-gw-http">
+          <mxGeometry x="700" y="30" width="300" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwhealth-body" value="«implements HttpHandler»&#xa;─────────────────────&#xa;+ handle(exchange: HttpExchange): void&#xa;  GET /health → 200&#xa;  {&quot;status&quot;:&quot;UP&quot;,&#xa;   &quot;component&quot;:&quot;edge-gateway&quot;}" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-gwhealth">
+          <mxGeometry x="0" y="28" width="300" height="105" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- PACKAGE: com.matchingengine.gateway.metrics                         -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="pkg-gw-metrics" value="com.matchingengine.gateway.metrics" style="swimlane;startSize=22;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;fontStyle=3;swimlaneHead=0;rounded=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="1175" width="450" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwmetrics" value="GatewayMetrics" style="swimlane;startSize=28;fontStyle=1;align=center;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;fontColor=#333333;" vertex="1" parent="pkg-gw-metrics">
+          <mxGeometry x="10" y="30" width="420" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="cls-gwmetrics-body" value="«Prometheus gateway metrics»&#xa;─────────────────────&#xa;+ requestsTotal: Counter   {labels: shard, status}&#xa;+ requestDuration: Histogram {labels: shard}&#xa;+ routingErrors: Counter   {labels: reason}&#xa;─────────────────────&#xa;+ recordRequest(shard: String,&#xa;                status: String,&#xa;                duration: double): void&#xa;+ recordRoutingError(reason: String): void&#xa;+ startHttpServer(port: int): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;html=1;" vertex="1" parent="cls-gwmetrics">
+          <mxGeometry x="0" y="28" width="420" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- RELATIONSHIPS — MATCHING ENGINE                                     -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Order uses OrderId (composition) -->
+        <mxCell id="rel-order-orderid" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;endArrow=diamondThin;endFill=1;endSize=8;strokeColor=#6c8ebf;fontSize=9;" edge="1" parent="1" source="cls-order" target="cls-orderid">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-order-orderid-lbl" value="- id" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-order-orderid"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Order uses Price (composition) -->
+        <mxCell id="rel-order-price" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;endArrow=diamondThin;endFill=1;endSize=8;strokeColor=#6c8ebf;fontSize=9;" edge="1" parent="1" source="cls-order" target="cls-price">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-order-price-lbl" value="- limitPrice" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-order-price"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Order uses Side, OrderType, OrderStatus -->
+        <mxCell id="rel-order-side" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;endArrow=open;endFill=0;dashed=1;strokeColor=#9673a6;fontSize=9;" edge="1" parent="1" source="cls-order" target="cls-side">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-order-ordertype" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;endArrow=open;endFill=0;dashed=1;strokeColor=#9673a6;fontSize=9;" edge="1" parent="1" source="cls-order" target="cls-ordertype">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-order-status" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;endArrow=open;endFill=0;dashed=1;strokeColor=#9673a6;fontSize=9;" edge="1" parent="1" source="cls-order" target="cls-orderstatus">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- PriceLevel contains Order (composition 1..*) -->
+        <mxCell id="rel-pricelevel-order" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=diamondThin;endFill=1;endSize=8;startArrow=none;strokeColor=#6c8ebf;fontSize=9;" edge="1" parent="1" source="cls-pricelevel" target="cls-order">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-pl-ord-lbl" value="orders 1..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-pricelevel-order"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- OrderBook aggregates PriceLevel -->
+        <mxCell id="rel-orderbook-pricelevel" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=diamondThin;endFill=0;endSize=8;startArrow=none;strokeColor=#6c8ebf;fontSize=9;" edge="1" parent="1" source="cls-orderbook" target="cls-pricelevel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-ob-pl-lbl" value="bids/asks 0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-orderbook-pricelevel"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- OrderBookManager aggregates OrderBook -->
+        <mxCell id="rel-obmanager-orderbook" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=diamondThin;endFill=0;endSize=8;strokeColor=#6c8ebf;fontSize=9;" edge="1" parent="1" source="cls-obbmanager" target="cls-orderbook">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-obm-ob-lbl" value="books 0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-obmanager-orderbook"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- MatchResultSet contains MatchResult -->
+        <mxCell id="rel-mrs-mr" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=diamondThin;endFill=1;endSize=8;strokeColor=#82b366;fontSize=9;" edge="1" parent="1" source="cls-matchresultset" target="cls-matchresult">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-mrs-mr-lbl" value="results 0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-mrs-mr"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- PriceTimePriorityMatcher realizes MatchingAlgorithm -->
+        <mxCell id="rel-matcher-alg" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=10;dashed=1;strokeColor=#9673a6;strokeWidth=2;fontSize=9;" edge="1" parent="1" source="cls-matcher" target="cls-matchalg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-matcher-alg-lbl" value="«realizes»" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=2;" vertex="1" connectable="0" parent="rel-matcher-alg"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- OrderEventHandler uses OrderBookManager -->
+        <mxCell id="rel-oeh-obm" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-obbmanager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- OrderEventHandler uses PriceTimePriorityMatcher -->
+        <mxCell id="rel-oeh-matcher" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-matcher">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- OrderEventHandler uses WAL, EventPublisher, MetricsRegistry -->
+        <mxCell id="rel-oeh-wal" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-wal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-oeh-pub" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-eventpub">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-oeh-met" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-metrics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-oeh-stats" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-matchstats">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-oeh-cfg" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#d79b00;fontSize=9;" edge="1" parent="1" source="cls-oeventhandler" target="cls-shardconfig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- OrderHttpHandler uses RingBuffer -->
+        <mxCell id="rel-ohttp-disruptor" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=9;" edge="1" parent="1" source="cls-orderhandler" target="cls-oeventhandler">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-ohttp-lbl" value="publishes to RingBuffer" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="rel-ohttp-disruptor"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- SeedHttpHandler uses OrderBookManager -->
+        <mxCell id="rel-seedhandler-obm" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=9;" edge="1" parent="1" source="cls-seedhandler" target="cls-obbmanager">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- MatchingStats uses PeriodicStatsLogger -->
+        <mxCell id="rel-stats-logger" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;" edge="1" parent="1" source="cls-statslogger" target="cls-matchstats">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- RELATIONSHIPS — EDGE GATEWAY                                        -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+
+        <!-- ConsistentHashRouter realizes SymbolRouter -->
+        <mxCell id="rel-chrouter-symrouter" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=10;dashed=1;strokeColor=#9673a6;strokeWidth=2;fontSize=9;" edge="1" parent="1" source="cls-chrouter" target="cls-symbolrouter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-chr-lbl" value="«realizes»" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=2;" vertex="1" connectable="0" parent="rel-chrouter-symrouter"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- OrderProxyHandler uses SymbolRouter -->
+        <mxCell id="rel-oproxy-router" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=9;" edge="1" parent="1" source="cls-orderproxy" target="cls-symbolrouter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-oproxy-lbl" value="«uses»" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;fontStyle=2;" vertex="1" connectable="0" parent="rel-oproxy-router"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- OrderProxyHandler uses GatewayMetrics -->
+        <mxCell id="rel-oproxy-met" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#b85450;fontSize=9;" edge="1" parent="1" source="cls-orderproxy" target="cls-gwmetrics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- EdgeGatewayApp uses GatewayConfig, creates ConsistentHashRouter, handlers -->
+        <mxCell id="rel-gwapp-cfg" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#82b366;fontSize=9;" edge="1" parent="1" source="cls-gwapp" target="cls-gwconfig">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-gwapp-router" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#82b366;fontSize=9;" edge="1" parent="1" source="cls-gwapp" target="cls-chrouter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- CROSS-SYSTEM: EdgeGateway → MatchingEngine via HTTP -->
+        <mxCell id="rel-cross" value="HTTP POST /orders&#xa;HTTP POST /seed&#xa;(java.net.http.HttpClient)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#AA0000;strokeWidth=2;fontSize=10;fontStyle=1;" edge="1" parent="1" source="cls-orderproxy" target="cls-orderhandler">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1375" y="1010" /><mxPoint x="950" y="1010" /><mxPoint x="950" y="1280" /><mxPoint x="175" y="1280" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- LEGEND                                                              -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <mxCell id="legend" value="&lt;b&gt;Relaciones UML 2.5&lt;/b&gt;&#xa;&#xa;─────  Composición (filled ◆)        contiene y es dueño del ciclo de vida&#xa;─────  Agregación (hollow ◆)         referencia, ciclo de vida independiente&#xa;─────  Realización (dashed + △)       implementa interfaz / abstracta&#xa;─────  Dependencia (dashed →)         usa / depende temporalmente&#xa;─────  Rojo cross-system              llamada HTTP entre los dos subsistemas" style="text;html=1;strokeColor=#333333;fillColor=#f5f5f5;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;rounded=1;fontSize=10;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="20" y="1720" width="560" height="130" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

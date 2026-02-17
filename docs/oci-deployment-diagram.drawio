@@ -1,0 +1,148 @@
+<mxfile host="app.diagrams.net" modified="2026-02-15T00:00:00.000Z" agent="Claude" version="22.1.16" etag="deployment-oci" type="device">
+  <diagram id="oci-deployment" name="OCI Deployment - Matching Engine">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Matching Engine - Oracle Cloud Infrastructure Deployment&#xa;UML 2.5 Deployment Diagram&#xa;Cost: $0.00 (Always Free Tier)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="800" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Internet -->
+        <mxCell id="internet" value="&lt;b&gt;Internet&lt;/b&gt;" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="700" y="120" width="200" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- VCN Container -->
+        <mxCell id="vcn" value="&lt;b&gt;VCN: matching-engine-vcn&lt;/b&gt;&#xa;CIDR: 10.0.0.0/16&#xa;Region: us-ashburn-1&#xa;Cost: $0.00" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;startSize=80;" vertex="1" parent="1">
+          <mxGeometry x="100" y="280" width="1400" height="850" as="geometry" />
+        </mxCell>
+
+        <!-- Public Subnet -->
+        <mxCell id="public-subnet" value="&lt;b&gt;Public Subnet&lt;/b&gt;&#xa;CIDR: 10.0.0.0/24&#xa;Internet accessible" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;startSize=70;" vertex="1" parent="vcn">
+          <mxGeometry x="40" y="100" width="620" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- Internet Gateway -->
+        <mxCell id="igw" value="&lt;&lt;gateway&gt;&gt;&#xa;&lt;b&gt;Internet Gateway&lt;/b&gt;&#xa;Cost: $0.00" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="public-subnet">
+          <mxGeometry x="230" y="20" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Bastion Host -->
+        <mxCell id="bastion" value="&lt;&lt;compute&gt;&gt;&#xa;&lt;b&gt;bastion-host&lt;/b&gt;&#xa;VM.Standard.E2.1.Micro&#xa;1 OCPU / 1 GB RAM&#xa;Oracle Linux 8&#xa;Public IP: Dynamic&#xa;Cost: $0.00 (Always Free)" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;size=10;" vertex="1" parent="public-subnet">
+          <mxGeometry x="40" y="130" width="200" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Load Balancer -->
+        <mxCell id="lb" value="&lt;&lt;loadBalancer&gt;&gt;&#xa;&lt;b&gt;Flexible Load Balancer&lt;/b&gt;&#xa;Shape: Flexible (10 Mbps)&#xa;Public IP: Dynamic&#xa;Backend: edge-and-tools:8080&#xa;Health check: /health&#xa;Cost: $0.00 (Always Free)" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="public-subnet">
+          <mxGeometry x="300" y="130" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Private Subnet -->
+        <mxCell id="private-subnet" value="&lt;b&gt;Private Subnet&lt;/b&gt;&#xa;CIDR: 10.0.1.0/24&#xa;No direct internet access" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;startSize=70;fontColor=#333333;" vertex="1" parent="vcn">
+          <mxGeometry x="40" y="420" width="1320" height="390" as="geometry" />
+        </mxCell>
+
+        <!-- NAT Gateway -->
+        <mxCell id="nat" value="&lt;&lt;gateway&gt;&gt;&#xa;&lt;b&gt;NAT Gateway&lt;/b&gt;&#xa;Outbound only&#xa;Cost: $0.00" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="private-subnet">
+          <mxGeometry x="40" y="20" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ME Shard A -->
+        <mxCell id="me-shard-a" value="&lt;&lt;compute&gt;&gt;&#xa;&lt;b&gt;me-shard-a&lt;/b&gt;&#xa;VM.Standard.A1.Flex&#xa;1 OCPU / 6 GB RAM&#xa;Oracle Linux 8 (ARM64)&#xa;Private IP: 10.0.1.20&#xa;&#xa;&lt;&lt;artifact&gt;&gt;&#xa;matching-engine:v1 (Docker)&#xa;Port: 8080 (HTTP)&#xa;Port: 9091 (metrics)&#xa;Symbols: A,B,C,D&#xa;&#xa;Java 21, ZGC, 512MB heap&#xa;Cost: $0.00 (Always Free)" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;size=10;align=left;spacingLeft=5;" vertex="1" parent="private-subnet">
+          <mxGeometry x="240" y="110" width="240" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- ME Shard B -->
+        <mxCell id="me-shard-b" value="&lt;&lt;compute&gt;&gt;&#xa;&lt;b&gt;me-shard-b&lt;/b&gt;&#xa;VM.Standard.A1.Flex&#xa;1 OCPU / 6 GB RAM&#xa;Oracle Linux 8 (ARM64)&#xa;Private IP: 10.0.1.21&#xa;&#xa;&lt;&lt;artifact&gt;&gt;&#xa;matching-engine:v1 (Docker)&#xa;Port: 8080 (HTTP)&#xa;Port: 9091 (metrics)&#xa;Symbols: E,F,G,H&#xa;&#xa;Java 21, ZGC, 512MB heap&#xa;Cost: $0.00 (Always Free)" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;size=10;align=left;spacingLeft=5;" vertex="1" parent="private-subnet">
+          <mxGeometry x="520" y="110" width="240" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- ME Shard C with Redpanda -->
+        <mxCell id="me-shard-c" value="&lt;&lt;compute&gt;&gt;&#xa;&lt;b&gt;me-shard-c&lt;/b&gt;&#xa;VM.Standard.A1.Flex&#xa;1 OCPU / 6 GB RAM&#xa;Oracle Linux 8 (ARM64)&#xa;Private IP: 10.0.1.22&#xa;&#xa;&lt;&lt;artifact&gt;&gt;&#xa;matching-engine:v1 (Docker)&#xa;Symbols: I,J,K,L&#xa;&#xa;&lt;&lt;artifact&gt;&gt;&#xa;redpanda:latest (Docker)&#xa;Port: 9092 (Kafka)&#xa;Port: 9644 (Admin)&#xa;1 GB RAM, 1 core&#xa;&#xa;Cost: $0.00 (Always Free)" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=9;size=10;align=left;spacingLeft=5;" vertex="1" parent="private-subnet">
+          <mxGeometry x="800" y="110" width="240" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Edge Gateway + Monitoring -->
+        <mxCell id="edge-tools" value="&lt;&lt;compute&gt;&gt;&#xa;&lt;b&gt;edge-and-tools&lt;/b&gt;&#xa;VM.Standard.A1.Flex&#xa;1 OCPU / 6 GB RAM&#xa;Oracle Linux 8 (ARM64)&#xa;Private IP: 10.0.1.30&#xa;&#xa;&lt;&lt;artifact&gt;&gt; edge-gateway:v1&#xa;Port: 8080 (HTTP), 9091 (metrics)&#xa;Routes to shards a/b/c&#xa;&#xa;&lt;&lt;artifact&gt;&gt; prometheus:latest&#xa;Port: 9090, 5s scrape&#xa;&#xa;&lt;&lt;artifact&gt;&gt; grafana:latest&#xa;Port: 3000 (admin/admin)&#xa;&#xa;&lt;&lt;artifact&gt;&gt; k6 (load testing)&#xa;&#xa;Cost: $0.00 (Always Free)" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;size=10;align=left;spacingLeft=5;" vertex="1" parent="private-subnet">
+          <mxGeometry x="1060" y="110" width="240" height="250" as="geometry" />
+        </mxCell>
+
+        <!-- Resource Summary -->
+        <mxCell id="resource-summary" value="&lt;b&gt;OCI Resource Summary&lt;/b&gt;&#xa;&#xa;Total Compute: 4 OCPUs, 24 GB RAM&#xa;  • 4x A1.Flex (ARM64): 1 OCPU, 6 GB each&#xa;  • 1x Micro (x86): 1 OCPU, 1 GB&#xa;&#xa;Total Storage: 170 GB boot volumes&#xa;  • me-shard-a: 30 GB&#xa;  • me-shard-b: 30 GB&#xa;  • me-shard-c: 30 GB&#xa;  • edge-and-tools: 40 GB&#xa;  • bastion: 40 GB&#xa;&#xa;Network: 1 VCN, 2 subnets, 1 IGW, 1 NAT, 1 LB&#xa;&#xa;Load Balancer: Flexible 10 Mbps&#xa;&#xa;&lt;b&gt;TOTAL MONTHLY COST: $0.00&lt;/b&gt;&#xa;(OCI Always Free Tier)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;fontStyle=0" vertex="1" parent="vcn">
+          <mxGeometry x="720" y="100" width="640" height="280" as="geometry" />
+        </mxCell>
+
+        <!-- Technology Stack -->
+        <mxCell id="tech-stack" value="&lt;b&gt;Technology Stack&lt;/b&gt;&#xa;&#xa;Application:&#xa;  • Java 21 (Eclipse Temurin)&#xa;  • LMAX Disruptor 4.0.0&#xa;  • Kafka Client 3.7.0&#xa;  • Prometheus Metrics 1.3.1&#xa;&#xa;Infrastructure:&#xa;  • Docker 24.x&#xa;  • Oracle Linux 8 (ARM64)&#xa;  • Redpanda (Kafka-compatible)&#xa;&#xa;Monitoring:&#xa;  • Prometheus (time-series DB)&#xa;  • Grafana (dashboards)&#xa;&#xa;Load Testing:&#xa;  • k6 (Grafana Labs)&#xa;  • 5,000+ orders/min capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="280" width="320" height="320" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        <mxCell id="conn-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;" edge="1" parent="1" source="internet" target="igw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;strokeColor=#b85450;" edge="1" parent="1" source="igw" target="lb">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="440" as="sourcePoint" />
+            <mxPoint x="540" y="510" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn-3" value="HTTP :80" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#b85450;" vertex="1" connectable="0" parent="conn-2">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryDz=0;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1" source="lb" target="edge-tools">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="610" as="sourcePoint" />
+            <mxPoint x="1280" y="770" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="conn-5" value="HTTP :8080" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#82b366;" vertex="1" connectable="0" parent="conn-4">
+          <mxGeometry x="0.1" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Edge to Shards -->
+        <mxCell id="conn-6" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitDz=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryDz=0;strokeWidth=1;strokeColor=#6c8ebf;dashed=1;" edge="1" parent="1" source="edge-tools" target="me-shard-a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn-7" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitDz=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryDz=0;strokeWidth=1;strokeColor=#6c8ebf;dashed=1;" edge="1" parent="1" source="edge-tools" target="me-shard-b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn-8" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitDz=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryDz=0;strokeWidth=1;strokeColor=#6c8ebf;dashed=1;" edge="1" parent="1" source="edge-tools" target="me-shard-c">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="label-routes" value="Symbol-hash routing&#xa;(A-D→a, E-H→b, I-L→c)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="880" y="800" width="140" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Bastion SSH -->
+        <mxCell id="conn-bastion" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitDz=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;strokeWidth=1;strokeColor=#d79b00;dashed=1;" edge="1" parent="1" source="bastion" target="private-subnet">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="label-ssh" value="SSH jump host&#xa;(port 22)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="160" y="640" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="&lt;b&gt;Legend&lt;/b&gt;&#xa;&#xa;Compute instance (ARM64)&#xa;Gateway&#xa;Load balancer&#xa;Public access&#xa;Internal routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=10;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="640" width="320" height="180" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

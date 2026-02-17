@@ -5,21 +5,24 @@ A high-performance, single-threaded matching engine for a centralized order book
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [Technology Stack](#technology-stack)
-3. [Project Structure](#project-structure)
-4. [Key Design Decisions](#key-design-decisions)
-5. [Prerequisites](#prerequisites)
-6. [How to Build](#how-to-build)
-7. [How to Run Locally (Java)](#how-to-run-locally-java)
-8. [How to Test Locally](#how-to-test-locally)
-9. [Deploy to Kubernetes (k3d)](#deploy-to-kubernetes-k3d)
-10. [Edge Gateway](#edge-gateway)
-11. [Load Testing (k6)](#load-testing-k6)
-12. [API Reference](#api-reference)
-13. [Configuration](#configuration)
-14. [Prometheus Metrics](#prometheus-metrics)
-15. [Docker](#docker)
-16. [Cloud Deployment](#cloud-deployment)
+2. [Architectural Styles, Patterns, and Tactics](#architectural-styles-patterns-and-tactics)
+3. [Technology Stack](#technology-stack)
+4. [Project Structure](#project-structure)
+5. [Key Design Decisions](#key-design-decisions)
+6. [Structured Logging and Observability](#structured-logging-and-observability)
+7. [Prerequisites](#prerequisites)
+8. [How to Build](#how-to-build)
+9. [How to Run Locally (Java)](#how-to-run-locally-java)
+10. [How to Test Locally](#how-to-test-locally)
+11. [Deploy to Kubernetes (k3d)](#deploy-to-kubernetes-k3d)
+12. [Edge Gateway](#edge-gateway)
+13. [Load Testing (k6)](#load-testing-k6)
+14. [API Reference](#api-reference)
+15. [Configuration](#configuration)
+16. [Prometheus Metrics](#prometheus-metrics)
+17. [Docker](#docker)
+18. [Cloud Deployment](#cloud-deployment)
+19. [Documentation and Diagrams](#documentation-and-diagrams)
 
 ---
 
@@ -57,6 +60,91 @@ The engine uses **price-time priority** matching:
 4. **Partial fills:** If the incoming order's quantity exceeds the resting order's, the resting order is fully filled and removed. Matching continues with the next resting order.
 5. **Resting:** If no more matching prices exist, the remaining quantity rests in the book at its limit price.
 
+### Horizontal Scalability (Sharding)
+
+The system scales from 1,000 to 5,000 matches/min via **asset-symbol sharding**. Each shard owns a disjoint set of symbols and operates an independent order book and matching thread:
+
+```
+                                    ┌─ ME Shard A ─ symbols A, B, C, D
+k6 ──► Edge Gateway (router) ──────┼─ ME Shard B ─ symbols E, F, G, H
+                                    └─ ME Shard C ─ symbols I, J, K, L
+```
+
+- **Partitioning scheme:** Static symbol-to-shard mapping configured via environment variables. The Edge Gateway uses an O(1) lookup table (`HashMap<symbol, shardUrl>`) to route each order to the correct shard.
+- **No cross-shard coordination:** Each shard processes its symbols independently. No distributed locks, no two-phase commit, no inter-shard communication.
+- **Linear throughput scaling:** 3 shards = 3x the matching capacity of a single shard. Each shard handles ~1,680 orders/min, collectively reaching 5,040 orders/min.
+- **Fault isolation:** A failure in Shard B does not affect Shards A or C. Each shard maintains its own WAL, Kafka producer, and Prometheus metrics.
+
+### Observability Pipeline
+
+```
+ME Shard ──metrics──► Prometheus (5s scrape) ──► Grafana (dashboards)
+    │                       ▲
+    │──structured logs──► stdout ──► Promtail ──► Loki ──► Grafana (log explorer)
+    │
+    └──events──► Kafka/Redpanda (orders + matches topics)
+```
+
+Three independent telemetry channels ensure full visibility without impacting matching latency:
+- **Metrics:** 11 Prometheus histograms/counters/gauges scraped every 5 seconds
+- **Logs:** Structured JSON via Logback + Logstash Encoder, collected by Promtail into Loki
+- **Events:** Order and match events published to Kafka topics for downstream consumers
+
+---
+
+## Architectural Styles, Patterns, and Tactics
+
+### Architectural Styles
+
+| Style | Where Applied | Rationale |
+|:---|:---|:---|
+| **Event-Driven Architecture (EDA)** | Core matching pipeline | Orders are events that flow through the Disruptor ring buffer. The HTTP handler publishes events; the `OrderEventHandler` consumes them. Decouples ingestion from processing. |
+| **Pipe-and-Filter** | `OrderEventHandler.onEvent()` processing chain | Each event passes through a sequential pipeline: validate -> insert -> match -> WAL -> publish -> metrics. Each stage is a "filter" with a single responsibility. |
+| **Client-Server** | HTTP API + k6 load generator | Standard request/response pattern for order submission. The "fire-and-publish" variant returns immediately without waiting for matching results. |
+| **Shared-Nothing (per shard)** | Multi-shard deployment | Each shard has its own process, memory, order book, WAL, and Kafka producer. No shared state between shards. |
+
+### Design Patterns
+
+| Pattern | Implementation | Purpose |
+|:---|:---|:---|
+| **Disruptor (LMAX)** | `RingBuffer<OrderEvent>` with `YieldingWaitStrategy` | Lock-free inter-thread communication between HTTP threads (producers) and the matching thread (consumer). Pre-allocated ring buffer eliminates GC pressure from object allocation. |
+| **Mechanical Sympathy** | Pre-allocated `OrderEvent` slots, `clear()` after use, `long` prices | Designs data structures for CPU cache friendliness. The ring buffer keeps events in contiguous memory. Value types (`long`, `int`) avoid object indirection. |
+| **Fire-and-Forget** | `EventPublisher` with `acks=0`, `max.block.ms=1` | Kafka publishing never blocks the matching thread. If the broker is down, events are dropped but matching continues. Prioritizes latency over delivery guarantees. |
+| **Write-Ahead Log** | `WriteAheadLog` with `MappedByteBuffer` | Durability via memory-mapped file. Records are appended sequentially; flush is deferred to `endOfBatch` to amortize disk I/O across batches. |
+| **Value Object** | `OrderId`, `Price` | Immutable domain primitives that enforce invariants. `Price` wraps `long` cents and implements `Comparable` for TreeMap ordering. |
+| **Strategy** | `MatchingAlgorithm` interface + `PriceTimePriorityMatcher` | Decouples matching logic from the event handler. Alternative algorithms (pro-rata, FIFO-only) can be swapped without changing the processing pipeline. |
+| **Reverse Proxy / Router** | `ConsistentHashRouter` + `OrderProxyHandler` | The Edge Gateway routes orders to shards by symbol using a pre-computed lookup table. Transparent HTTP forwarding preserves the ME's API contract. |
+
+### Quality Attribute Tactics
+
+#### Latency Tactics
+
+| Tactic | Implementation | Effect |
+|:---|:---|:---|
+| **Reduce computational overhead** | Single-threaded processing via Disruptor (no locks, no context switches) | Eliminates synchronization overhead entirely |
+| **Manage event rate** | `YieldingWaitStrategy` spin-waits instead of parking threads | Avoids OS scheduler latency on the critical path |
+| **In-memory processing** | `TreeMap` + `ArrayDeque` order book (no disk reads during matching) | O(log P + F) matching with no I/O stalls |
+| **Batch I/O** | WAL flush deferred to `endOfBatch`; Kafka `linger.ms=5` | Amortizes disk and network I/O across multiple events |
+| **Minimize GC pauses** | ZGC garbage collector with `-Xms256m -Xmx512m -XX:+AlwaysPreTouch` | Sub-millisecond GC pauses; heap pre-touched to avoid page faults |
+| **Pre-allocate resources** | Ring buffer slots created at startup via `OrderEventFactory` | No object allocation per event; `clear()` resets fields in place |
+| **Async non-blocking I/O** | Kafka `max.block.ms=1`, async appender for logging | Side effects (publish, log) never stall the matching thread |
+
+#### Scalability Tactics
+
+| Tactic | Implementation | Effect |
+|:---|:---|:---|
+| **Horizontal partitioning (sharding)** | Static symbol-to-shard mapping across 3 ME instances | Linear throughput scaling: 1 shard = 1,000 matches/min, 3 shards = 5,000 matches/min |
+| **Stateless routing** | Edge Gateway lookup table: `HashMap<symbol, shardUrl>` (O(1)) | Gateway adds < 5ms overhead; no state to replicate |
+| **Resource isolation** | Each shard runs in its own container with dedicated CPU/memory limits | Prevents noisy-neighbor effects between shards |
+
+#### Availability / Resilience Tactics
+
+| Tactic | Implementation | Effect |
+|:---|:---|:---|
+| **Fault isolation (Bulkhead)** | Independent shard processes; Kafka `max.block.ms=1` | Kafka/Redpanda outage does not affect matching; shard failure is contained |
+| **Graceful degradation** | EventPublisher silently drops events when broker is unreachable | Matching continues even without downstream consumers |
+| **Health monitoring** | `/health` endpoint + Prometheus metrics + structured logging | Enables automated liveness/readiness probes in Kubernetes |
+
 ---
 
 ## Technology Stack
@@ -71,18 +159,26 @@ The engine uses **price-time priority** matching:
 | HTTP Server | `com.sun.net.httpserver.HttpServer` | JDK 21 |
 | Kafka Producer | `org.apache.kafka:kafka-clients` | 3.7.0 |
 | Prometheus | `io.prometheus:prometheus-metrics-*` | 1.3.1 |
+| Logging | Logback Classic + Logstash Encoder (JSON) | 1.5.6 / 8.0 |
 | JSON | `com.google.code.gson:gson` | 2.11.0 |
+| Message Broker | Redpanda (Kafka API-compatible) | latest |
+| Load Testing | k6 (Grafana) | latest |
+| Container Runtime | Docker + k3d (local K8s) | latest |
 | JVM | Eclipse Temurin | 21, ZGC, 256-512MB heap |
 
 ---
 
 ## Project Structure
 
+### Matching Engine
+
 ```
 src/matching-engine/
   build.gradle.kts                  # Gradle build with all dependencies and fat JAR task
   settings.gradle.kts               # Project name
   Dockerfile                        # eclipse-temurin:21-jre-alpine with ZGC flags
+  src/main/resources/
+    logback.xml                      # JSON structured logging config (Logstash encoder + AsyncAppender)
   src/main/java/com/matchingengine/
     MatchingEngineApp.java           # Main entry point and startup sequence
     config/
@@ -92,10 +188,10 @@ src/matching-engine/
       HealthHttpHandler.java         # GET /health
       SeedHttpHandler.java           # POST /seed (pre-populate order book)
     disruptor/
-      OrderEvent.java                # Pre-allocated ring buffer event
-      OrderEventFactory.java         # Creates empty OrderEvent instances
+      OrderEvent.java                # Pre-allocated ring buffer event (mutable, cleared after use)
+      OrderEventFactory.java         # Creates empty OrderEvent instances for the ring buffer
       OrderEventTranslator.java      # Copies HTTP request data into ring buffer slot
-      OrderEventHandler.java         # Single-threaded event processor (match + WAL + Kafka)
+      OrderEventHandler.java         # Single-threaded event processor (match + WAL + Kafka + metrics)
     domain/
       Side.java                      # Enum: BUY, SELL
       OrderType.java                 # Enum: LIMIT, MARKET
@@ -106,17 +202,42 @@ src/matching-engine/
       PriceLevel.java                # FIFO queue (ArrayDeque) at a single price point
       OrderBook.java                 # TreeMap-based bids/asks with HashMap order index
       OrderBookManager.java          # Symbol -> OrderBook registry
-      MatchResult.java               # Single fill result
+      MatchResult.java               # Single fill result (taker, maker, price, quantity)
       MatchResultSet.java            # Collection of fills for one incoming order
     matching/
-      MatchingAlgorithm.java         # Interface
-      PriceTimePriorityMatcher.java  # Price-time priority implementation
+      MatchingAlgorithm.java         # Interface (Strategy pattern)
+      PriceTimePriorityMatcher.java  # Price-time priority implementation O(log P + F)
     wal/
       WriteAheadLog.java             # Memory-mapped WAL with deferred flush
     publishing/
-      EventPublisher.java            # Async Kafka producer wrapper
+      EventPublisher.java            # Async Kafka producer wrapper (acks=0, max.block.ms=1)
     metrics/
-      MetricsRegistry.java           # All 11 Prometheus metrics
+      MetricsRegistry.java           # All 11 Prometheus metrics (histograms, counters, gauges)
+    logging/
+      MatchingStats.java             # AtomicLong counters (lock-free, shared between threads)
+      PeriodicStatsLogger.java       # 10-second summary logger on a separate daemon thread
+```
+
+### Edge Gateway
+
+```
+src/edge-gateway/
+  build.gradle.kts                  # Gradle build with fat JAR task
+  settings.gradle.kts               # Project name
+  Dockerfile                        # eclipse-temurin:21-jre-alpine
+  src/main/java/com/matchingengine/gateway/
+    EdgeGatewayApp.java              # Main entry point
+    config/
+      GatewayConfig.java             # Environment variable parsing (shard map, symbol map)
+    routing/
+      SymbolRouter.java              # Interface: getShardUrl(symbol), getShardId(symbol)
+      ConsistentHashRouter.java      # O(1) lookup table: HashMap<symbol, shardUrl>
+    http/
+      OrderProxyHandler.java         # POST /orders → route by symbol → forward to ME shard
+      SeedProxyHandler.java          # POST /seed/{shardId} → forward to specific ME shard
+      HealthHandler.java             # GET /health
+    metrics/
+      GatewayMetrics.java            # Prometheus: gw_requests_total, gw_request_duration, gw_routing_errors
 ```
 
 ---
@@ -132,6 +253,78 @@ src/matching-engine/
 | **Fire-and-publish HTTP** | `POST /orders` returns 200 immediately after publishing to the ring buffer. The caller does NOT wait for matching. This keeps HTTP response times minimal. |
 | **WAL flush on endOfBatch** | `MappedByteBuffer.force()` is expensive. By deferring it to `endOfBatch`, disk syncs are amortized across multiple events. |
 | **Kafka `max.block.ms=1`** | The Kafka producer never blocks the matching thread. If the broker is down, events are silently dropped (logged + counted) but matching continues unaffected. |
+| **AsyncAppender for logging** | Logback's `AsyncAppender` (queue=8192, `neverBlock=true`) ensures log serialization never stalls the matching thread. If the queue is full, log entries are dropped rather than blocking. |
+| **ZGC garbage collector** | Z Garbage Collector provides sub-millisecond pause times. Combined with `-XX:+AlwaysPreTouch`, heap pages are faulted in at startup, avoiding latency spikes during operation. |
+| **Structured JSON logging** | All log output is JSON via Logstash Encoder. Enables automated parsing by Promtail/Loki without regex-based extraction. Each event carries structured key-value fields. |
+
+---
+
+## Structured Logging and Observability
+
+The Matching Engine uses **structured JSON logging** via Logback + Logstash Encoder to provide full operational visibility during load tests. Logs are designed to be collected by Promtail and stored in Loki for querying through Grafana.
+
+### Logging Architecture
+
+```
+Matching Thread ──► SLF4J Logger ──► AsyncAppender (queue=8192, neverBlock) ──► LogstashEncoder ──► stdout (JSON)
+                                                                                                       │
+Stats Thread (10s) ──► SLF4J Logger ──────────────────────────────────────────────────────────────────┘
+                                                                                                       │
+                                                                                         Promtail ──► Loki ──► Grafana
+```
+
+The `AsyncAppender` with `neverBlock=true` is critical: it guarantees the matching thread is never blocked by log serialization or I/O. If the log queue fills up, entries are silently discarded rather than stalling the matching pipeline.
+
+### Log Event Types
+
+When `ENABLE_DETAILED_LOGGING=true`, the following structured events are emitted per order:
+
+| Event | Level | Fields | When |
+|:---|:---|:---|:---|
+| `ORDER_RECEIVED` | INFO | orderId, symbol, side, price, quantity, shard | Every incoming order |
+| `MATCH_EXECUTED` | INFO | matchId, takerOrderId, makerOrderId, symbol, executionPrice, quantity, takerSide, shard | Each fill during matching |
+| `ORDER_RESTING` | INFO | orderId, symbol, side, remainingQuantity, shard | When remaining quantity rests in the book |
+| `ORDER_REJECTED` | WARN | orderId, symbol, reason, shard | Unknown symbol or validation failure |
+
+### Periodic Summary (Always Enabled)
+
+Regardless of `ENABLE_DETAILED_LOGGING`, the `PeriodicStatsLogger` runs on a **separate daemon thread** and emits a `PERIODIC_SUMMARY` every 10 seconds:
+
+```json
+{
+  "timestamp": "2026-02-16T10:30:00.000Z",
+  "level": "INFO",
+  "message": "Periodic summary",
+  "event": "PERIODIC_SUMMARY",
+  "shard": "a",
+  "intervalSeconds": 10,
+  "buyOrders": 85,
+  "sellOrders": 72,
+  "totalOrders": 157,
+  "matchesExecuted": 64,
+  "rejected": 0,
+  "matchRate": "0.4076",
+  "bidDepth": 1245,
+  "askDepth": 1180,
+  "bidLevels": 48,
+  "askLevels": 45,
+  "service": "matching-engine"
+}
+```
+
+This uses `AtomicLong` counters (`MatchingStats`) that are incremented by the matching thread and read by the stats thread — lock-free with negligible overhead.
+
+### Shutdown Summary
+
+On JVM shutdown, a `SHUTDOWN_SUMMARY` event reports lifetime totals:
+
+| Field | Description |
+|:---|:---|
+| `totalBuyOrders` | Lifetime buy orders processed |
+| `totalSellOrders` | Lifetime sell orders processed |
+| `totalMatches` | Lifetime matches executed |
+| `totalRejected` | Lifetime rejected orders |
+| `overallMatchRate` | matches / total orders |
 
 ---
 
@@ -644,6 +837,7 @@ infra/
     07-port-forward.sh                        # Port-forwards (single/multi mode)
     08-run-asr1-tests.sh                      # Orchestrate ASR 1 k6 tests
     09-run-asr2-tests.sh                      # Orchestrate ASR 2 k6 tests
+    run-unified-asr-tests.sh                  # Unified orchestrator (ASR 1 + ASR 2)
     10-teardown.sh                            # Delete cluster
     helpers/
       wait-for-pod.sh                         # Wait for pod readiness
@@ -761,18 +955,24 @@ The project includes a complete set of [k6](https://k6.io/) load test scripts to
 ```
 src/k6/
 ├── lib/
-│   ├── config.js              # Shared constants: URLs, symbols, prices, thresholds
-│   ├── orderGenerator.js      # Synthetic order generation (aggressive/passive/mixed)
-│   └── seedHelper.js          # Order Book seeding helpers (direct and via gateway)
-├── test-asr1-a1-warmup.js     # A1: JVM warm-up (2 min, 500/min) — discard results
-├── test-asr1-a2-normal-load.js # A2: Normal load (5 min, 1,020/min) — PRIMARY ASR 1
-├── test-asr1-a3-depth-variation.js # A3: Shallow/medium/deep OB (3x3 min)
-├── test-asr1-a4-kafka-degradation.js # A4: Decoupling proof (3 min, pause Redpanda at t=60s)
-├── test-asr2-b1-baseline.js   # B1: Single shard via gateway (3 min, baseline)
-├── test-asr2-b2-peak-sustained.js # B2: 3 shards sustained (5 min, 5,040/min) — PRIMARY ASR 2
-├── test-asr2-b3-ramp.js       # B3: Ramp 1K→2.5K→5K/min (10 min)
-├── test-asr2-b4-hot-symbol.js # B4: 80% traffic to 1 symbol (5 min)
-└── seed-orderbooks.js         # Standalone seeder (single/multi modes)
+│   ├── config.js                      # Shared constants: URLs, symbols, prices, thresholds
+│   ├── orderGenerator.js              # Synthetic order generation (aggressive/passive/mixed)
+│   └── seedHelper.js                  # Order Book seeding helpers (direct and via gateway)
+├── test-asr1-a1-warmup.js             # A1: JVM warm-up (2 min, 500/min) — discard results
+├── test-asr1-a2-normal-load.js        # A2: Normal load (5 min, 1,020/min) — PRIMARY ASR 1
+├── test-asr1-a3-depth-variation.js    # A3: Shallow/medium/deep OB (3x3 min)
+├── test-asr1-a4-kafka-degradation.js  # A4: Decoupling proof (3 min, pause Redpanda at t=60s)
+├── test-asr2-b1-baseline.js           # B1: Single shard via gateway (3 min, baseline)
+├── test-asr2-b2-peak-sustained.js     # B2: 3 shards sustained (5 min, 5,040/min) — PRIMARY ASR 2
+├── test-asr2-b3-ramp.js              # B3: Ramp 1K→2.5K→5K/min (10 min)
+├── test-asr2-b4-hot-symbol.js        # B4: 80% traffic to 1 symbol (5 min)
+├── test-stochastic-normal.js          # Stochastic: normal load profile
+├── test-stochastic-aggressive.js      # Stochastic: aggressive load profile
+├── test-stochastic-normal-2min.js     # Stochastic: 2-min normal (for mixed runs)
+├── test-stochastic-aggressive-20s.js  # Stochastic: 20-sec aggressive (for mixed runs)
+├── run-mixed-stochastic.sh            # Orchestrator: 20 normal + 20 aggressive randomized
+├── seed-orderbooks.js                 # Standalone seeder (single/multi modes)
+└── results/                           # Test output directory (gitignored)
 ```
 
 ### Test Summary
@@ -909,6 +1109,46 @@ The tests use a **60/40 aggressive/passive split**:
 
 Each test's `setup()` function seeds the Order Book with resting SELL orders before load begins, ensuring there are always orders to match against. Prices are in **cents** (e.g., `15000` = $150.00).
 
+### Stochastic Tests (Statistical Validation)
+
+Beyond the deterministic ASR tests, the project includes **stochastic tests** that run repeated trials with randomized order distributions to build statistical confidence:
+
+| Script | Duration | Purpose |
+|:---|:---|:---|
+| `test-stochastic-normal-2min.js` | 2 min | Normal load (1,020/min) with randomized price distribution |
+| `test-stochastic-aggressive-20s.js` | 20 sec | Aggressive burst (high match rate) with randomized order mix |
+| `run-mixed-stochastic.sh` | ~50 min | Orchestrator: runs 20 normal + 20 aggressive tests in random order |
+
+```bash
+# Run mixed stochastic suite (40 tests total)
+bash src/k6/run-mixed-stochastic.sh http://localhost:8081
+
+# Custom number of runs
+NORMAL_RUNS=10 AGGRESSIVE_RUNS=10 bash src/k6/run-mixed-stochastic.sh
+```
+
+Output: `src/k6/results/mixed-stochastic-YYYYMMDD-HHMMSS/` with per-run JSON summaries, consolidated CSV, and a text report.
+
+### Unified ASR Test Suite
+
+The unified test orchestrator (`infra/scripts/run-unified-asr-tests.sh`) runs both ASR 1 and ASR 2 test suites in a single execution, handling deployment switching automatically:
+
+```bash
+# Run both ASR 1 (single shard) and ASR 2 (multi-shard)
+bash infra/scripts/run-unified-asr-tests.sh --both
+
+# Run only ASR 1 (stochastic latency tests)
+bash infra/scripts/run-unified-asr-tests.sh --asr1-only
+
+# Run only ASR 2 (scalability tests)
+bash infra/scripts/run-unified-asr-tests.sh --asr2-only
+
+# Skip deployment steps (if already deployed)
+SKIP_DEPLOYMENT=true bash infra/scripts/run-unified-asr-tests.sh --both
+```
+
+Output: `infra/scripts/results/unified-YYYYMMDD-HHMMSS/` with separate `asr1/` and `asr2/` subdirectories, plus a consolidated pass/fail report.
+
 ### Validating Scripts
 
 Verify all scripts parse correctly without running them:
@@ -1011,6 +1251,7 @@ All configuration is via environment variables with sensible defaults:
 | `WAL_PATH` | `/tmp/wal` | Directory for the Write-Ahead Log file |
 | `WAL_SIZE_MB` | `64` | WAL file size in megabytes |
 | `RING_BUFFER_SIZE` | `131072` | Disruptor ring buffer size (must be a power of 2) |
+| `ENABLE_DETAILED_LOGGING` | `false` | When `true`, emits per-order structured log events (ORDER_RECEIVED, MATCH_EXECUTED, ORDER_RESTING, ORDER_REJECTED). Periodic summaries are always enabled regardless of this setting. |
 
 ---
 
@@ -1236,3 +1477,29 @@ export COMPARTMENT_ID="ocid1.compartment.oc1..your-compartment-id"
 - OCI CLI configured (`oci setup config`)
 - Always Free tier eligible tenancy
 - Compartment OCID
+
+---
+
+## Documentation and Diagrams
+
+The `docs/` directory contains architectural documentation and UML 2.5 diagrams (draw.io format):
+
+```
+docs/
+  experiment-design.md              # Full experiment plan: ASR definitions, load profiles,
+                                    #   pass/fail criteria, resource allocation, step-by-step guide
+  class-diagram-uml25.drawio        # UML 2.5 class diagram (ME + Edge Gateway)
+                                    #   All packages, classes, attributes, methods, relationships
+                                    #   (composition, aggregation, realization, dependency)
+  oci-deployment-uml25.drawio       # UML 2.5 deployment diagram for OCI
+                                    #   «device», «executionEnvironment», «artifact» stereotypes
+                                    #   Pay-as-you-go cost breakdown ($179.95/month without free tier)
+  OCI-DEPLOYMENT-ARCHITECTURE.md    # Detailed OCI architecture: cost table, security model,
+                                    #   tech stack per component, deployment sequence
+  UNIFIED_ASR_TESTING.md            # Unified ASR test suite documentation
+  experiment-cloud-aws.md           # AWS cloud experiment notes
+  experiment-cloud-oci.md           # OCI cloud experiment notes
+  DIAGRAMS.md                       # Diagram inventory and instructions
+```
+
+To open the `.drawio` diagrams, use [draw.io](https://app.diagrams.net/) (File -> Open -> select the `.drawio` file).
